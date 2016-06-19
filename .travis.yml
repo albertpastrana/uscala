@@ -1,0 +1,11 @@
+language: scala
+scala:
+   - 2.11.8
+script: "sbt clean coverage test coverageAggregate"
+after_success:
+  - sbt coveralls
+  - bash <(curl -s https://codecov.io/bash)
+cache:
+  directories:
+   - ~/.ivy2
+   - ~/.sbt

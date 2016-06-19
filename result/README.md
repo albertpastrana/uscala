@@ -1,0 +1,7 @@
+# Result
+
+A right biased union type that holds a value for a successful computation
+or a value for a failed one.
+
+It's an alternative to `Either`, the equivalent of `Xor` in Cats or `\/` in
+Scalaz and its name is inspired by Rust's `Result`.
