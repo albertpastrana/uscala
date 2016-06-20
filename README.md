@@ -1,4 +1,4 @@
-# μscala  [![Build Status](https://img.shields.io/travis/albertpastrana/uscala/master.svg)](https://travis-ci.org/albertpastrana/uscala) [![Coverage Status] (https://img.shields.io/coveralls/albertpastrana/uscala.svg)](https://coveralls.io/github/albertpastrana/uscala?branch=master)
+# μscala  [![Build Status](https://img.shields.io/travis/albertpastrana/uscala/master.svg)](https://travis-ci.org/albertpastrana/uscala) [![Coverage Status] (https://img.shields.io/coveralls/albertpastrana/uscala.svg)](https://coveralls.io/github/albertpastrana/uscala?branch=master) [![codecov](https://codecov.io/gh/albertpastrana/uscala/branch/master/graph/badge.svg)](https://codecov.io/gh/albertpastrana/uscala)
 
 Set of general purpose micro libraries in scala.
 
@@ -9,8 +9,8 @@ in scala.
 
 List is as follows:
 
-- [i18n](i18n/): a right biased union type that holds a value
-  for a successful computation or a value for a failed one.
+- [i18n](i18n/): message internationalization scala micro library
+  with no dependencies for the JVM.
 - [result](result/): a right biased union type that holds a value
   for a successful computation or a value for a failed one.
 
