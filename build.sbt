@@ -1,15 +1,13 @@
 import sbt._
 
 name := "uscala"
-
+organization := "org.uscala"
 description := "Set of general purpose micro libraries in scala."
-
+licenses += "MIT" -> url("https://opensource.org/licenses/MIT")
 homepage := Some(url("https://github.com/albertpastrana/uscala"))
-
 developers := List(
   Developer(id = "albertpastrana", name = "Albert Pastrana", email = "", url = new URL("https://albertpastrana.com"))
 )
-
 scmInfo := Some(
   ScmInfo(
     browseUrl = new URL("https://github.com/albertpastrana/uscala"),
@@ -17,9 +15,15 @@ scmInfo := Some(
   )
 )
 
-licenses += "MIT" -> url("https://opensource.org/licenses/MIT")
+releasePublishArtifactsAction in ThisBuild := PgpKeys.publishSigned.value
 
-scalaVersion := "2.11.8"
+scalaVersion in ThisBuild := "2.11.8"
+scalacOptions in ThisBuild ++= Seq(
+  "-Xlint",
+  "-Xfatal-warnings",
+  "-unchecked",
+  "-deprecation",
+  "-feature")
 
 lazy val root = (project in file(".")).
   aggregate(i18n, result)
