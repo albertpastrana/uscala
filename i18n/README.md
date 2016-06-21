@@ -1,3 +1,3 @@
-# simple-i18n [![Build Status](https://img.shields.io/travis/albertpastrana/simple-i18n/master.svg)](https://travis-ci.org/albertpastrana/simple-i18n) [![Coverage Status] (https://img.shields.io/coveralls/albertpastrana/simple-i18n.svg)](https://coveralls.io/github/albertpastrana/simple-i18n?branch=master)
+# simple-i18n [![bintray](https://api.bintray.com/packages/albertpastrana/maven/uscala-i18n/images/download.svg) ](https://bintray.com/albertpastrana/maven/uscala-i18n/_latestVersion)
 
 Simple message internationalization scala micro library with no dependencies for the JVM.

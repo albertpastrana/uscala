@@ -1,4 +1,4 @@
-# Result
+# Result [![bintray](https://api.bintray.com/packages/albertpastrana/maven/uscala-result/images/download.svg) ](https://bintray.com/albertpastrana/maven/uscala-result/_latestVersion)
 
 A right biased union type that holds a value for a successful computation
 or a value for a failed one.
