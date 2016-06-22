@@ -23,6 +23,10 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "map" >> {
     "should not apply f if the result is Fail" >> prop { n: Int =>
+      def a(i: Int) = i.toString
+      val b: Result[Throwable, Int] = Ok(1)
+      val c: Result[Throwable, String] = b.map(a)
+      val d: Result[Throwable, Int] = c.map(x=>x.toInt)
       Fail(n).map(f) must_=== Fail(n)
     }
     "should apply f if the result is Ok" >> prop { n: Int =>

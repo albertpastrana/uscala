@@ -5,7 +5,7 @@ import uscala.result.Result.{Fail, Ok}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-sealed abstract class Result[+A, +B] extends Serializable {
+sealed abstract class Result[+A, +B] extends Product with Serializable {
 
   def fold[C](fa: A => C, fb: B => C): C = this match {
     case Fail(a) => fa(a)
@@ -14,19 +14,19 @@ sealed abstract class Result[+A, +B] extends Serializable {
 
   def map[C](f: (B) => C) = this match {
     case Ok(b) => Ok(f(b))
-    case _ => this
+    case e @ Fail(_) => e
   }
 
   def leftMap[C](f: (A) => C) = this match {
     case Fail(a) => Fail(f(a))
-    case _ => this
+    case v @ Ok(_) => v
   }
 
   def mapOk[C](f: (B) => C) = map(f)
 
   def mapFail[C](f: (A) => C) = leftMap(f)
 
-  def flatMap[AA >: A, C](f: B => Result[AA, C]): Result[AA, C] = this match {
+  def flatMap[AA >: A, D](f: B => Result[AA, D]): Result[AA, D] = this match {
     case fail @ Result.Fail(_) => fail
     case Result.Ok(b) => f(b)
   }
