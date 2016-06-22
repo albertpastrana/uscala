@@ -13,28 +13,28 @@ class ResultSpec extends Specification with ScalaCheck {
   def fb(n: Int) = n + 2
 
   "fold" >> {
-    "should apply fa if he result is Fail" >> prop { n: Int =>
+    "should apply fa if the result is Fail" >> prop { n: Int =>
       Fail(n).fold(fa, fb) must_=== fa(n)
     }
-    "should apply fb if he result is Ok" >> prop { n: Int =>
+    "should apply fb if the result is Ok" >> prop { n: Int =>
       Ok(n).fold(fa, fb) must_=== fb(n)
     }
   }
 
   "map" >> {
-    "should not apply f if he result is Fail" >> prop { n: Int =>
+    "should not apply f if the result is Fail" >> prop { n: Int =>
       Fail(n).map(f) must_=== Fail(n)
     }
-    "should apply f if he result is Ok" >> prop { n: Int =>
+    "should apply f if the result is Ok" >> prop { n: Int =>
       Ok(n).map(f) must_=== Ok(f(n))
     }
   }
 
   "leftMap" >> {
-    "should apply f if he result is Fail" >> prop { n: Int =>
+    "should apply f if the result is Fail" >> prop { n: Int =>
       Fail(n).leftMap(f) must_=== Fail(f(n))
     }
-    "should not apply f if he result is Ok" >> prop { n: Int =>
+    "should not apply f if the result is Ok" >> prop { n: Int =>
       Ok(n).leftMap(f) must_=== Ok(n)
     }
   }
@@ -53,11 +53,26 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "flatMap" >> {
+    def fa(a: Int): Result[Int, Int] = if (a % 2 == 0) Ok(a) else Fail(a)
+    def fb(a: Int): Result[Int, Int] = if (a % 3 == 0) Ok(a) else Fail(a)
+    def fc(a: Int): Result[Int, Int] = if (a % 5 == 0) Ok(a) else Fail(a)
+    "should not apply fa if the result is Fail" >> prop { n: Int =>
+      Fail(n).flatMap(fa) must_=== Fail(n)
+    }
+    "should apply fa if the result is Ok" >> prop { n: Int =>
+      Ok(n).flatMap(fa) must_=== fa(n)
+                                                 }
+    "should be associative" >> prop { n: Int =>
+      fa(n).flatMap(fb).flatMap(fc) must_=== fa(n).flatMap(x => fb(x).flatMap(fc))
+    }
+  }
+
   "bimap" >> {
-    "should apply fa if he result is Fail" >> prop { n: Int =>
+    "should apply fa if the result is Fail" >> prop { n: Int =>
       Fail(n).bimap(fa, fb) must_=== Fail(fa(n))
     }
-    "should apply fb if he result is Ok" >> prop { n: Int =>
+    "should apply fb if the result is Ok" >> prop { n: Int =>
       Ok(n).bimap(fa, fb) must_=== Ok(fb(n))
     }
   }

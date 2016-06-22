@@ -26,6 +26,11 @@ sealed abstract class Result[+A, +B] extends Serializable {
 
   def mapFail[C](f: (A) => C) = leftMap(f)
 
+  def flatMap[AA >: A, C](f: B => Result[AA, C]): Result[AA, C] = this match {
+    case fail @ Result.Fail(_) => fail
+    case Result.Ok(b) => f(b)
+  }
+
   def bimap[C, D](fa: A => C, fb: B => D): Result[C, D] = this match {
     case Fail(a) => Fail(fa(a))
     case Ok(b) => Ok(fb(b))
