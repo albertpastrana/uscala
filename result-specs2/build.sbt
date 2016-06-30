@@ -7,7 +7,8 @@ description := "Specs2 matchers for uscala result."
 licenses += "MIT" -> url("https://opensource.org/licenses/MIT")
 homepage := Some(url("https://github.com/albertpastrana/uscala/tree/master/result"))
 developers := List(
-  Developer(id = "albertpastrana", name = "Albert Pastrana", email = "", url = new URL("https://albertpastrana.com"))
+  Developer(id = "albertpastrana", name = "Albert Pastrana", email = "", url = new URL("https://albertpastrana.com")),
+  Developer(id = "janstenpickle", name = "Chris Jansen", email = "", url = new URL("http://nic-cage.xyz"))
 )
 scmInfo := Some(ScmInfo(browseUrl = new URL("https://github.com/albertpastrana/uscala/tree/master/result"),
                         connection = "scm:git:git@github.com:albertpastrana/uscala.git"))
