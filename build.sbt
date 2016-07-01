@@ -26,10 +26,12 @@ scalacOptions in ThisBuild ++= Seq(
   "-feature")
 
 lazy val root = (project in file(".")).
-  aggregate(i18n, result, resultSpecs2)
+  aggregate(i18n, result, resultSpecs2, resultAsync)
 
 lazy val i18n = project
 
 lazy val result = project
 
 lazy val resultSpecs2 = (project in file("result-specs2")).dependsOn(result)
+
+lazy val resultAsync = (project in file("result-async")).dependsOn(result)
