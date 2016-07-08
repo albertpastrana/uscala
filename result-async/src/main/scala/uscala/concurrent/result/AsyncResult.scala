@@ -1,18 +1,18 @@
-package uscala.result.async
+package uscala.concurrent.result
 
 import uscala.result.Result
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.Try
 
-final case class AsyncResult[+A, +B](underlying: Future[Result[A, B]]) {
+final class AsyncResult[+A, +B](val underlying: Future[Result[A, B]]) extends Serializable {
+
   def flatMap[AA >: A, D](f: B => AsyncResult[AA, D])(implicit ec: ExecutionContext): AsyncResult[AA, D] =
     AsyncResult(
-      map(f).underlying.flatMap(
+      underlying.flatMap(
         _.fold(
-          err => Future(Result.fail(err)),
-          _.underlying
+          AsyncResult.fail[AA, D](_).underlying,
+          f(_).underlying
         )
       )
     )
@@ -24,16 +24,8 @@ final case class AsyncResult[+A, +B](underlying: Future[Result[A, B]]) {
       )
     )
 
-
   def flatMapF[C](f: B => Future[C])(implicit ec: ExecutionContext): AsyncResult[A, C] =
-    AsyncResult(
-      underlying.flatMap(
-        _.fold(
-          err => Future(Result.fail(err)),
-          f(_).map(Result.ok)
-        )
-      )
-    )
+    flatMap(f.andThen(x => AsyncResult.fromFuture(x)))
 
   def map[C](f: B => C)(implicit ec: ExecutionContext): AsyncResult[A, C] =
     AsyncResult(
@@ -47,7 +39,7 @@ final case class AsyncResult[+A, +B](underlying: Future[Result[A, B]]) {
   def leftMap[C](f: A => C)(implicit ec: ExecutionContext): AsyncResult[C, B] =
     AsyncResult(
       underlying.map(
-        _.leftMap(f)
+        _.mapFail(f)
       )
     )
 
@@ -68,22 +60,32 @@ final case class AsyncResult[+A, +B](underlying: Future[Result[A, B]]) {
 
   def fold[C](fa: A => C, fb: B => C)(implicit ec: ExecutionContext): Future[C] = underlying.map(_.fold(fa, fb))
 
-  def attemptRun[AA >: A](implicit f: Throwable => AA, ec: ExecutionContext): Result[AA, B] =
-    Result.fromTry(
-      Try(Await.result(underlying, Duration.Inf))
-    ).leftMap(f).flatMap(identity)
+  def attemptRunFor(duration: Duration): Result[Throwable, Result[A, B]] =
+    Result.attempt(Await.result(underlying, duration))
+
+  def attemptRunFor[AA >: A](f: Throwable => AA, duration: Duration)(implicit ec: ExecutionContext): Result[AA, B] =
+    Result.attempt(Await.result(underlying, duration)).mapFail(f).flatMap(identity)
+
+  def attemptRun(implicit ec: ExecutionContext): Result[Throwable, Result[A, B]] =
+    attemptRunFor(Duration.Inf)
+
+  def attemptRun[AA >: A](f: Throwable => AA)(implicit ec: ExecutionContext): Result[AA, B] =
+    attemptRunFor(f, Duration.Inf)
 }
 
 object AsyncResult {
 
+  def apply[A, B](f: Future[Result[A, B]]) = new AsyncResult(f)
+
   def fromFuture[A, B](f: Future[B])(implicit ex: ExecutionContext): AsyncResult[A, B] = AsyncResult(f.map(Result.ok))
 
-  def fromResult[A, B](r: Result[A, B])(implicit ex: ExecutionContext): AsyncResult[A, B] = AsyncResult(Future(r))
+  def fromResult[A, B](r: Result[A, B]): AsyncResult[A, B] = AsyncResult(Future.successful(r))
 
-  def now[A, B](b: B)(implicit ex: ExecutionContext): AsyncResult[A, B] = AsyncResult(Future(Result.ok(b)))
+  def ok[A, B](b: B): AsyncResult[A, B] = fromResult(Result.ok(b))
 
-  def ok[A, B](b: B)(implicit ex: ExecutionContext): AsyncResult[A, B] = now(b)
+  def fail[A, B](a: A): AsyncResult[A, B] = fromResult(Result.fail(a))
 
-  def fail[A, B](a: A)(implicit ex: ExecutionContext): AsyncResult[A, B] = AsyncResult(Future(Result.fail(a)))
+  def attempt[B](f: => B): AsyncResult[Throwable, B] =
+    AsyncResult(Future.successful(Result.attempt(f)))
 
 }

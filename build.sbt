@@ -34,4 +34,4 @@ lazy val result = project
 
 lazy val resultSpecs2 = (project in file("result-specs2")).dependsOn(result)
 
-lazy val resultAsync = (project in file("result-async")).dependsOn(result)
+lazy val resultAsync = (project in file("result-async")).dependsOn(result, resultSpecs2 % "test->compile")
