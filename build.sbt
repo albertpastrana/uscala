@@ -26,7 +26,7 @@ scalacOptions in ThisBuild ++= Seq(
   "-feature")
 
 lazy val root = (project in file(".")).
-  aggregate(i18n, result, `result-async`, `result-specs2`, retry, timeout)
+  aggregate(i18n, result, `result-async`, `result-specs2`, retry, timeout, `url`)
 
 lazy val i18n = project
 
@@ -39,3 +39,5 @@ lazy val `result-specs2` = project.dependsOn(result)
 lazy val retry = project
 
 lazy val timeout = project
+
+lazy val `url` = project

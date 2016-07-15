@@ -20,6 +20,8 @@ List is as follows:
   successful using a backoff algorithm (exponential backoff by default).
 - [timeout](timeout/): class that allows to query if a specific amount
   of time has elapsed or not.
+- [url](url/): immutable URL class with some useful methods to construct
+  it, get the params, convert it to other types...
 
 ## Why?
 
