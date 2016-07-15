@@ -3,8 +3,8 @@ import sbt._
 name := "uscala"
 organization := "org.uscala"
 description := "Set of general purpose micro libraries in scala."
-licenses += "MIT" -> url("https://opensource.org/licenses/MIT")
-homepage := Some(url("https://github.com/albertpastrana/uscala"))
+licenses += "MIT" -> new URL("https://opensource.org/licenses/MIT")
+homepage := Some(new URL("https://github.com/albertpastrana/uscala"))
 developers := List(
   Developer(id = "albertpastrana", name = "Albert Pastrana", email = "", url = new URL("https://albertpastrana.com"))
 )
@@ -26,12 +26,16 @@ scalacOptions in ThisBuild ++= Seq(
   "-feature")
 
 lazy val root = (project in file(".")).
-  aggregate(i18n, result, resultSpecs2, resultAsync)
+  aggregate(i18n, result, `result-async`, `result-specs2`, retry, timeout)
 
 lazy val i18n = project
 
 lazy val result = project
 
-lazy val resultSpecs2 = (project in file("result-specs2")).dependsOn(result)
+lazy val `result-async` = project.dependsOn(result, `result-specs2` % "test->compile")
 
-lazy val resultAsync = (project in file("result-async")).dependsOn(result, resultSpecs2 % "test->compile")
+lazy val `result-specs2` = project.dependsOn(result)
+
+lazy val retry = project
+
+lazy val timeout = project

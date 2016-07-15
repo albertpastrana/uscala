@@ -13,7 +13,13 @@ List is as follows:
   with no dependencies for the JVM.
 - [result](result/): a right biased union type that holds a value
   for a successful computation or a value for a failed one.
+- [result-async](result-async/): A right biased union type that holds a value
+  for an asynchronous/future successful computation or a value for a failed one.
 - [result-specs2](result-specs2/): specs2 matchers for the result type
+- [retry](retry/): small utility that retries a computation until it is
+  successful using a backoff algorithm (exponential backoff by default).
+- [timeout](timeout/): class that allows to query if a specific amount
+  of time has elapsed or not.
 
 ## Why?
 
