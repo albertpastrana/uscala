@@ -1,7 +1,11 @@
 language: scala
 scala:
    - 2.11.8
-script: "sbt clean coverage test coverageAggregate"
+script:
+  - sbt clean coverage test
+  - sbt coverageReport
+  - sbt coverageAggregate
+  - sbt codacyCoverage
 after_success:
   - sbt coveralls
   - bash <(curl -s https://codecov.io/bash)
