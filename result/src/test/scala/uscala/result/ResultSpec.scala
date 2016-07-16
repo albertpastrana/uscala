@@ -1,10 +1,12 @@
 package uscala.result
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
-import uscala.result.Result.{Ok, Fail}
+import uscala.result.Result.{Fail, Ok}
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 class ResultSpec extends Specification with ScalaCheck {
 
@@ -101,16 +103,16 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "foreach" >> {
     "should not apply f if it's a Fail" >> prop { n: Int =>
-      var effect: Option[Int] = None
-      def sideEffect(i: Int): Unit = effect = Some(i)
+      val effect = new AtomicBoolean(false)
+      def sideEffect(i: Int) = effect.set(true)
       Fail(n).foreach(sideEffect)
-      effect must beNone
+      effect.get must beFalse
     }
     "should apply f if it's an Ok" >> prop { n: Int =>
-      var effect: Option[Int] = None
-      def sideEffect(i: Int): Unit = effect = Some(i)
+      val effect = new AtomicBoolean(false)
+      def sideEffect(i: Int) = effect.set(true)
       Ok(n).foreach(sideEffect)
-      effect must beSome(n)
+      effect.get must beTrue
     }
   }
 

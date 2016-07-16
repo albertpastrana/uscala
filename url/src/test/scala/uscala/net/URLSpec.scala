@@ -167,8 +167,8 @@ trait TestData {
     "https://host?" -> URL(scheme = "https", host = "host", rawPath = Some(""), query = NonEmptyQuery(Map.empty)),
     "ftp://example.com/" -> URL(scheme = "ftp", host = "example.com", rawPath = Some("/")),
     "http://host/a%20path" -> URL(scheme = "http", host = "host", rawPath = Some("/a%20path")),
-    "http://user:password@example.com:77/p/a/t/h?foo=bar&key=value#foo"
-      -> URL(scheme = "http", userInfo = Some("user:password"), host = "example.com", port = Some(77),
+    "http://user:password@example.com:2/p/a/t/h?foo=bar&key=value#foo"
+      -> URL(scheme = "http", userInfo = Some("user:password"), host = "example.com", port = Some(2),
              rawPath = Some("/p/a/t/h"), query = NonEmptyQuery(Map("foo" -> List("bar"), "key" -> List("value"))),
              fragment = Some("foo")),
     "http://example.com?foo=bar&encoded=%2F-(4)+%26+a"

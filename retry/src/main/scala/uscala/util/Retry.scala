@@ -8,9 +8,10 @@ object Retry {
 
   type Backoff = (Int, Duration) => Duration
 
-  val DefaultWait = 2.millis
+  val DefaultInterval = 0.5.seconds
 
-  private val DoNothing = (_: Throwable) => ()
+  @inline
+  private def doNothing(t: Throwable) =  ()
 
   /**
     * This function tries to synchronously execute a function forever,
@@ -22,7 +23,6 @@ object Retry {
     *
     * By default uses the exponential backoff strategy.
     *
-    * @param f function to be executed
     * @param maxRetries if specified, indicates the maximum number of
     *                   times it will try to execute the function,
     *                   otherwise it will never end until there is
@@ -33,12 +33,13 @@ object Retry {
     * @param failAction method to execute if the main function fails,
     *                   useful if you want to log something.
     *                   Default is `()`.
+    * @param f function to be executed
     */
-  def retry[T](f: => Try[T],
-               maxRetries: Option[Int],
-               interval: Duration = 0.5.seconds,
+  def retry[T](maxRetries: Option[Int],
+               interval: Duration = DefaultInterval,
                backoff: Backoff = exponentialBackoff,
-               failAction: Throwable => Unit = DoNothing): Try[T] = {
+               failAction: Throwable => Unit = doNothing)
+              (f: => Try[T]): Try[T] = {
     @tailrec
     def loop(retry: Int): Try[T] = f match {
       case s @ Success(v) => s
@@ -56,22 +57,22 @@ object Retry {
     * retries, effectively making it wait forever until the
     * function `f` returns a `Success`.
     */
-  def forever[T](f: => Try[T],
-                 interval: Duration = DefaultWait,
+  def forever[T](interval: Duration = DefaultInterval,
                  backoff: Backoff = exponentialBackoff,
-                 failAction: Throwable => Unit = DoNothing): T =
-    retry(f, None, interval, backoff, failAction).get
+                 failAction: Throwable => Unit = doNothing)
+                (f: => Try[T]): T =
+    retry(None, interval, backoff, failAction)(f).get
 
   /**
     * Convenience method that calls `retry` wrapping the
     * `maxRetries` parameter into a `Some`.
     */
-  def until[T](f: => Try[T],
-               maxRetries: Int,
-               interval: Duration = 2.millis,
+  def until[T](maxRetries: Int,
+               interval: Duration = DefaultInterval,
                backoff: Backoff = exponentialBackoff,
-               failAction: Throwable => Unit = DoNothing): Try[T] =
-    retry(f, Some(maxRetries), interval, backoff, failAction)
+               failAction: Throwable => Unit = doNothing)
+              (f: => Try[T]): Try[T] =
+    retry(Some(maxRetries), interval, backoff, failAction)(f)
 
   @inline
   def exponentialBackoff(retry: Int, interval: Duration): Duration =

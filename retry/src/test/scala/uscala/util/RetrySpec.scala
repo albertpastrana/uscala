@@ -1,6 +1,7 @@
 package uscala.util
 
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
@@ -16,15 +17,15 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
 
   "retry" >> {
     "should return the value of the computation if it's successful" >> {
-      Retry.retry(Success(1), None) must beASuccessfulTry(1)
+      Retry.retry(None)(Success(1)) must beASuccessfulTry(1)
     }
     "should retry until the computation is successful" >> {
-      Retry.retry(fail(0), None) must beASuccessfulTry(3)
+      Retry.retry(None)(fail(0)) must beASuccessfulTry(3)
     }
     "should use the exponential backoff strategy by default" >> {
       val interval = 50.millis
       val start = System.currentTimeMillis
-      Retry.retry(fail(1), None, interval)
+      Retry.retry(None, interval)(fail(1))
       val elapsed = (System.currentTimeMillis - start).toInt
 
       val minWait = 25 + 37
@@ -35,45 +36,45 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
     "should use the specified backoff strategy" >> {
       val pause = 50.millis
       val start = System.currentTimeMillis
-      Retry.retry(fail(2), None, pause, constant)
+      Retry.retry(None, pause, constant)(fail(2))
       val elapsed = System.currentTimeMillis - start
 
       elapsed must be_>((pause * 2).toMillis)
-      elapsed must be_<((pause * 3).toMillis + 100)
+      elapsed must be_<((pause * 3).toMillis + 0)
     }
     "should execute the specified failAction" >> {
       val errors = new ArrayBuffer[Throwable]
       def failAction(tr: Throwable): Unit = errors += tr
-      Retry.retry(fail(3), None, failAction = failAction)
+      Retry.retry(None, failAction = failAction)(fail(3))
 
       errors must haveLength(2)
     }
     "should retry only until the max retries has been reached" >> {
-      Retry.retry(fail(4), Some(1)) must beAFailedTry
+      Retry.retry(Some(1))(fail(4)) must beAFailedTry
     }
   }
 
   "forever" >> {
     "should never finish if the function is not successful" >> {
       import scala.concurrent.ExecutionContext.Implicits.global
-      var end = false
-      def err = if (end) Success(1) else Failure(new IllegalArgumentException)
-      val result = Await.result(Future(Retry.forever[Int](err)), 1.second) must throwA[TimeoutException]
-      end = true
+      val end = new AtomicBoolean(false)
+      def err = if (end.get) Success(1) else Failure(new IllegalArgumentException)
+      val result = Await.result(Future(Retry.forever[Int]()(err)), 1.second) must throwA[TimeoutException]
+      end.set(true)
       result
     }
     "should unwrap the try and return the value if it's successful" >> {
-      Retry.forever(Success(1)) must_=== 1
+      Retry.forever()(Success(1)) must_=== 1
     }
   }
 
   "until" >> {
     "should finish after max retries if the function is not successful" >> {
       val err = new IllegalArgumentException
-      Retry.until[Int](Failure(err), 2) must beAFailedTry(err)
+      Retry.until[Int](2)(Failure(err)) must beAFailedTry(err)
     }
     "should return the successful try if the computation is successful" >> {
-      Retry.until(Success(1), 2) must beASuccessfulTry(1)
+      Retry.until(2)(Success(1)) must beASuccessfulTry(1)
     }
   }
 

@@ -39,9 +39,8 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
   "map" >> {
     "should not apply f if the result is Fail" >> prop { n: Int =>
       def a(i: Int) = i.toString
-      val b: AsyncResult[Throwable, Int] = AsyncResult.ok(1)
-      val c: AsyncResult[Throwable, String] = b.map(a)
-      val d: AsyncResult[Throwable, Int] = c.map(x=>x.toInt)
+      val b = AsyncResult.ok[Throwable, Int](1)
+      val c = b.map(a)
       attempt(AsyncResult.fail(n).map(f)) must_=== Fail(n)
     }
     "should apply f if the result is Ok" >> prop { n: Int =>
@@ -149,17 +148,18 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
   }
 
   "attemptRunFor" >> {
+    def longOp = Future(Thread.sleep(1.second.toMillis))
     "Returns a result after successfully evaluating the future" >> prop { r: Result[Int, Int] =>
       AsyncResult.fromResult(r).attemptRunFor(1.millis) must_=== Ok(r)
     }
 
-    "Fails with an exception on the left of a result when execution times out" >> prop { s: String =>
-      AsyncResult.fromFuture(Future{ Thread.sleep(2000); s }).attemptRunFor(1.millis) must beFail[Throwable].like {
+    "Fails with an exception on the left of a result when execution times out" >> {
+      AsyncResult.fromFuture(longOp).attemptRunFor(1.millis) must beFail[Throwable].like {
         case a => a.getMessage must_=== "Futures timed out after [1 millisecond]"
       }
     }
-    "Returns a failed result of the underlying result type when execution times out" >> prop { s: String =>
-      AsyncResult.fromFuture(Future{ Thread.sleep(2000); s }).attemptRunFor(_.getMessage, 1.millis) must_=== Fail("Futures timed out after [1 millisecond]")
+    "Returns a failed result of the underlying result type when execution times out" >> {
+      AsyncResult.fromFuture(longOp).attemptRunFor(_.getMessage, 1.millis) must_=== Fail("Futures timed out after [1 millisecond]")
     }
   }
 
