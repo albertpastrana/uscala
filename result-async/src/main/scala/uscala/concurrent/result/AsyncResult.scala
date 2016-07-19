@@ -85,7 +85,13 @@ object AsyncResult {
 
   def fail[A, B](a: A): AsyncResult[A, B] = fromResult(Result.fail(a))
 
-  def attempt[B](f: => B): AsyncResult[Throwable, B] =
+  def attempt[B](f: => B)(implicit ex: ExecutionContext): AsyncResult[Throwable, B] =
+    AsyncResult(Future(Result.attempt(f)))
+
+  def attemptSync[B](f: => B): AsyncResult[Throwable, B] =
     AsyncResult(Future.successful(Result.attempt(f)))
+
+  def attemptFuture[B](f: Future[B])(implicit ex: ExecutionContext): AsyncResult[Throwable, B] =
+    AsyncResult(f.map { res => Result.ok(res) }.recover { case tr => Result.fail(tr) })
 
 }

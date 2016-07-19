@@ -1,5 +1,7 @@
 package uscala.concurrent.result
 
+import java.util.concurrent.TimeoutException
+
 import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
@@ -8,7 +10,7 @@ import uscala.result.Result.{Fail, Ok}
 import uscala.result.specs2.ResultMatchers
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{Duration, _}
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers {
@@ -23,9 +25,10 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
   def f(n: Int) = n + 1
   def fa(n: Int) = f(n)
   def fb(n: Int) = n + 2
+  def longOp = Future(Thread.sleep(1.second.toMillis))
 
   def attempt[A, B](a: AsyncResult[A, B]): Result[A, B] = attempt(a.underlying)
-  def attempt[T](f: Future[T]): T = Await.result(f, Duration.Inf)
+  def attempt[T](f: Future[T]): T = Await.result(f, 0.5.seconds)
 
   "fold" >> {
     "should apply fa if the result is Fail" >> prop { n: Int =>
@@ -147,8 +150,7 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
     }
   }
 
-  "attemptRunFor" >> {
-    def longOp = Future(Thread.sleep(1.second.toMillis))
+  "attemptRunFor(Duration)" >> {
     "Returns a result after successfully evaluating the future" >> prop { r: Result[Int, Int] =>
       AsyncResult.fromResult(r).attemptRunFor(1.millis) must_=== Ok(r)
     }
@@ -157,6 +159,12 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
       AsyncResult.fromFuture(longOp).attemptRunFor(1.millis) must beFail[Throwable].like {
         case a => a.getMessage must_=== "Futures timed out after [1 millisecond]"
       }
+    }
+  }
+
+  "attemptRunFor(Throwable => AA, Duration)" >> {
+    "Returns a result after successfully evaluating the future" >> prop { r: Result[Int, Int] =>
+      AsyncResult.fromResult(r).attemptRunFor(_ => -1, 1.millis) must_=== r
     }
     "Returns a failed result of the underlying result type when execution times out" >> {
       AsyncResult.fromFuture(longOp).attemptRunFor(_.getMessage, 1.millis) must_=== Fail("Futures timed out after [1 millisecond]")
@@ -188,18 +196,48 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
       }
     }
 
-    "attempt" >> {
+    "attemptSync" >> {
       "should catch any NonFatal exception and return it as a Fail" >> prop { e: Exception =>
         def fails() = throw e
-        attempt(AsyncResult.attempt(fails())) must_=== Fail(e)
+        attempt(AsyncResult.attemptSync(fails())) must_=== Fail(e)
       }
       "should not catch a Fatal exception" >> {
         def fails() = throw new StackOverflowError
-        AsyncResult.attempt(fails()) must throwA[StackOverflowError]
+        AsyncResult.attemptSync(fails()) must throwA[StackOverflowError]
+      }
+      "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
+        attempt(AsyncResult.attemptSync(f(n))) must_=== Ok(f(n))
+      }
+    }
+
+    "attempt" >> {
+      "should catch any NonFatal exception and return it as a Fail" >> prop { e: Exception =>
+        def fails = throw e
+        attempt(AsyncResult.attempt(fails)) must_=== Fail(e)
+      }
+      "should not catch a Fatal exception" >> {
+        def fails = throw new OutOfMemoryError
+
+        attempt(AsyncResult.attempt(fails)) must throwA[TimeoutException]
       }
       "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
         attempt(AsyncResult.attempt(f(n))) must_=== Ok(f(n))
       }
     }
+
+    "attemptFuture" >> {
+      "should wrap the exception of a failed future in te result" >> prop { e: Exception =>
+        attempt(AsyncResult.attemptFuture(Future.failed(e))) must_== Fail(e)
+      }
+      "should not catch a Fatal exception" >> {
+        def willFail = Future(throw new OutOfMemoryError)
+
+        attempt(AsyncResult.attemptFuture(willFail)) must throwA[TimeoutException]
+      }
+      "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
+        attempt(AsyncResult.attemptFuture(Future.successful(n))) must_=== Ok(n)
+      }
+    }
+
   }
 }
