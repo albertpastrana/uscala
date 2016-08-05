@@ -202,6 +202,36 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "isOk" >> {
+    "should return true for an Ok Result" >> {
+      Ok(1).isOk must_=== true
+    }
+    "should return false for a Fail Result" >> {
+      Fail(1).isOk must_=== false
+    }
+  }
+
+  "isFail" >> {
+    "should return false for an Ok Result" >> {
+      Ok(1).isFail must_=== false
+    }
+    "should return truefor a Fail Result" >> {
+      Fail(1).isFail must_=== true
+    }
+  }
+
+  "ResultSeq" >> {
+    "should transform a Seq(Fail) into a Fail(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
+      (xs.map(Fail(_)).sequence must_=== Fail(xs.head))
+    }
+    "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
+      (xs.map(Ok(_)).sequence must_=== Ok(xs))
+    }
+    "should transform an empty Seq into an Ok(Seq.empty)" >> {
+      Seq.empty[Result[Int, String]].sequence must_=== Ok(Seq.empty[String])
+    }
+  }
+
   "ResultFunctions" >> {
     "fail" >> {
       "should create a Fail" >> prop { n: Int =>

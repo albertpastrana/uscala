@@ -66,11 +66,27 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
 
   def toTry(implicit ev: A <:< Throwable): Try[B] = fold(Failure(_), Success(_))
 
+  def isOk: Boolean
+
+  def isFail: Boolean = !isOk
+
 }
 
 object Result extends ResultFunctions {
-  final case class Fail[+A](a: A) extends Result[A, Nothing]
-  final case class Ok[+B](b: B) extends Result[Nothing, B]
+
+  final case class Fail[+A](a: A) extends Result[A, Nothing] {
+    override def isOk: Boolean = false
+  }
+
+  final case class Ok[+B](b: B) extends Result[Nothing, B] {
+    override def isOk: Boolean = true
+  }
+
+  implicit class ResultSeq[A, B](val xs: Seq[Result[A, B]]) {
+    def sequence: Result[A, Seq[B]] = xs.foldLeft[Result[A, Seq[B]]](Result.Ok(Seq.empty)) {
+      (a, b) => a flatMap (c => b map (d => c :+ d))
+    }
+  }
 }
 
 trait ResultFunctions {

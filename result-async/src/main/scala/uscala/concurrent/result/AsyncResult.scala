@@ -1,6 +1,7 @@
 package uscala.concurrent.result
 
 import uscala.result.Result
+import uscala.result.Result.{Fail, Ok}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -18,45 +19,29 @@ final class AsyncResult[+A, +B](val underlying: Future[Result[A, B]]) extends Se
     )
 
   def flatMapR[AA >: A, D](f: B => Result[AA, D])(implicit ec: ExecutionContext): AsyncResult[AA, D] =
-    AsyncResult(
-      underlying.map(
-        _.flatMap(f)
-      )
-    )
+    AsyncResult(underlying.map(_.flatMap(f)))
 
   def flatMapF[C](f: B => Future[C])(implicit ec: ExecutionContext): AsyncResult[A, C] =
     flatMap(f.andThen(x => AsyncResult.fromFuture(x)))
 
   def map[C](f: B => C)(implicit ec: ExecutionContext): AsyncResult[A, C] =
-    AsyncResult(
-      underlying.map(
-        _.map(f)
-      )
-    )
+    AsyncResult(underlying.map(_.map(f)))
 
   def mapOk[C](f: B => C)(implicit ec: ExecutionContext): AsyncResult[A, C] = map(f)
 
   def leftMap[C](f: A => C)(implicit ec: ExecutionContext): AsyncResult[C, B] =
-    AsyncResult(
-      underlying.map(
-        _.mapFail(f)
-      )
-    )
+    AsyncResult(underlying.map(_.mapFail(f)))
 
   def mapFail[C](f: A => C)(implicit ec: ExecutionContext): AsyncResult[C, B] = leftMap(f)
 
   def bimap[C, D](fa: A => C, fb: B => D)(implicit ec: ExecutionContext): AsyncResult[C, D] =
-    AsyncResult(
-      underlying.map(
-        _.bimap(fa, fb)
-      )
-    )
+    AsyncResult(underlying.map(_.bimap(fa, fb)))
 
-  def swap(implicit ec: ExecutionContext): AsyncResult[B, A] = AsyncResult(
-    underlying.map(
-      _.swap
-    )
-  )
+  def merge[AA >: A](implicit ec: ExecutionContext, ev: B <:< AA): Future[AA] =
+    underlying.map(_.merge)
+
+  def swap(implicit ec: ExecutionContext): AsyncResult[B, A] =
+    AsyncResult(underlying.map(_.swap))
 
   def fold[C](fa: A => C, fb: B => C)(implicit ec: ExecutionContext): Future[C] = underlying.map(_.fold(fa, fb))
 
