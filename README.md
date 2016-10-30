@@ -13,6 +13,8 @@ List is as follows:
 
 - [i18n](i18n/): message internationalization scala micro library
   with no dependencies for the JVM.
+- [resources](resources/): helps dealing with resources in the classpath, allowing
+  null-safe access and listing resources from packages.
 - [result](result/): a right biased union type that holds a value
   for a successful computation or a value for a failed one.
 - [result-async](result-async/): A right biased union type that holds a value
