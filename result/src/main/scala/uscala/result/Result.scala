@@ -2,6 +2,7 @@ package uscala.result
 
 import uscala.result.Result.{Fail, Ok}
 
+import scala.collection.generic.CanBuildFrom
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
@@ -82,11 +83,14 @@ object Result extends ResultFunctions {
     override def isOk: Boolean = true
   }
 
-  implicit class ResultSeq[A, B](val xs: Seq[Result[A, B]]) {
-    def sequence: Result[A, Seq[B]] = xs.foldLeft[Result[A, Seq[B]]](Result.Ok(Seq.empty)) {
-      (a, b) => a flatMap (c => b map (d => c :+ d))
-    }
+  import scala.language.higherKinds
+  implicit class TraversableResult[E, A, M[X] <: TraversableOnce[X]](xs: M[Result[E, A]]) {
+    def sequence(implicit cbf: CanBuildFrom[M[Result[E, A]], A, M[A]]): Result[E, M[A]] =
+      xs.foldLeft(Result.ok[E, scala.collection.mutable.Builder[A, M[A]]](cbf(xs))) {
+        (fr, fa) => for (r <- fr; a <- fa) yield r += a
+      }.map(_.result())
   }
+
 }
 
 trait ResultFunctions {

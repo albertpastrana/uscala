@@ -1,8 +1,9 @@
 package uscala.concurrent.result
 
 import uscala.result.Result
-import uscala.result.Result.{Fail, Ok}
 
+import scala.collection.generic.CanBuildFrom
+import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -60,10 +61,6 @@ final class AsyncResult[+A, +B](val underlying: Future[Result[A, B]]) extends Se
 
 object AsyncResult {
 
-  implicit class ResultOps[A, B](val res: Result[A, B]) {
-    def async: AsyncResult[A, B] = AsyncResult.fromResult(res)
-  }
-
   def apply[A, B](f: Future[Result[A, B]]) = new AsyncResult(f)
 
   def fromFuture[A, B](f: Future[B])(implicit ex: ExecutionContext): AsyncResult[A, B] = AsyncResult(f.map(Result.ok))
@@ -82,5 +79,17 @@ object AsyncResult {
 
   def attemptFuture[B](f: Future[B])(implicit ex: ExecutionContext): AsyncResult[Throwable, B] =
     AsyncResult(f.map { res => Result.ok(res) }.recover { case tr => Result.fail(tr) })
+
+  implicit class ResultOps[A, B](val res: Result[A, B]) {
+    def async: AsyncResult[A, B] = AsyncResult.fromResult(res)
+  }
+
+  import scala.language.higherKinds
+  implicit class TraversableAsyncResult[E, A, M[X] <: TraversableOnce[X]](xs: M[AsyncResult[E, A]]) {
+    def sequence(implicit cbf: CanBuildFrom[M[AsyncResult[E, A]], A, M[A]], executor: ExecutionContext): AsyncResult[E, M[A]] =
+      xs.foldLeft(AsyncResult.ok[E, mutable.Builder[A, M[A]]](cbf(xs))) {
+        (fr, fa) => for (r <- fr; a <- fa) yield r += a
+      }.map(_.result())(executor)
+  }
 
 }

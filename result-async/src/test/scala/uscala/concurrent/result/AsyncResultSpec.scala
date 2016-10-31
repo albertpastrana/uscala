@@ -7,6 +7,7 @@ import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import uscala.result.Result
 import uscala.result.Result.{Fail, Ok}
+import uscala.concurrent.result.AsyncResult.ResultOps
 import uscala.result.specs2.ResultMatchers
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -128,6 +129,15 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
     }
   }
 
+  "merge" >> {
+    "should return the value of Fail if it's a Fail" >> prop { n: Int =>
+      attempt(AsyncResult.fail(n).merge) must_=== n
+    }
+    "should return the value of Ok if it's an Ok" >> prop { n: Int =>
+      attempt(AsyncResult.ok(n).merge) must_=== n
+    }
+  }
+
   "swap" >> {
     "should move Fail value to Ok" >> prop { n: Int =>
       attempt(AsyncResult.fail(n).swap) must_=== Ok(n)
@@ -238,6 +248,27 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
         attempt(AsyncResult.attemptFuture(Future.successful(n))) must_=== Ok(n)
       }
     }
+  }
 
+  "'monkey patching' functions" >> {
+    "async" >> {
+      "should transform a failed result into an async result" >> prop { n: Int =>
+        attempt(Result.fail(n).async) must_=== attempt(AsyncResult.fail(n))
+      }
+      "should transform a failed result into an async result" >> prop { n: Int =>
+        attempt(Result.ok(n).async) must_=== attempt(AsyncResult.ok(n))
+      }
+    }
+    "sequence" >> {
+      "should transform a Seq(Fail) into a Fail(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
+        (attempt(xs.map(AsyncResult.fail).sequence) must_=== Fail(xs.head))
+      }
+      "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
+        (attempt(xs.map(AsyncResult.ok).sequence) must_=== Ok(xs))
+      }
+      "should transform an empty Seq into an Ok(Seq.empty)" >> {
+        attempt(Seq.empty[AsyncResult[Int, String]].sequence) must_=== Ok(Seq.empty[String])
+      }
+    }
   }
 }

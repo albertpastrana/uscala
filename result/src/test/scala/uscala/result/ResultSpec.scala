@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
-import uscala.result.Result.{Fail, Ok}
+import uscala.result.Result.{TraversableResult, Fail, Ok}
 
 import scala.util.{Failure, Success}
 
@@ -220,12 +220,13 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
-  "ResultSeq" >> {
+  "sequence" >> {
+    import uscala.result.Result._
     "should transform a Seq(Fail) into a Fail(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-      (xs.map(Fail(_)).sequence must_=== Fail(xs.head))
+      (xs.map(Result.fail).sequence must_=== Fail(xs.head))
     }
     "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-      (xs.map(Ok(_)).sequence must_=== Ok(xs))
+      (xs.map(Result.ok).sequence must_=== Ok(xs))
     }
     "should transform an empty Seq into an Ok(Seq.empty)" >> {
       Seq.empty[Result[Int, String]].sequence must_=== Ok(Seq.empty[String])

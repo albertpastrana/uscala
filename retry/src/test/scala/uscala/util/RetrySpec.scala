@@ -40,7 +40,7 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
       val elapsed = System.currentTimeMillis - start
 
       elapsed must be_>((pause * 2).toMillis)
-      elapsed must be_<((pause * 3).toMillis + 0)
+      elapsed must be_<((pause * 3).toMillis + 150) //adding some extra time for the computation
     }
     "should execute the specified failAction" >> {
       val errors = new ArrayBuffer[Throwable]
