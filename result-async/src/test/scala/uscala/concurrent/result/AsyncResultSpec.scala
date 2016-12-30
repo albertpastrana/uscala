@@ -4,17 +4,19 @@ import java.util.concurrent.TimeoutException
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
+import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
+import org.specs2.specification.mutable.ExecutionEnvironment
+import uscala.concurrent.result.AsyncResult.{attemptFuture, attemptSync, fromFuture, fromResult, fail => asyncFail, ok => asyncOk}
 import uscala.result.Result
 import uscala.result.Result.{Fail, Ok}
-import uscala.concurrent.result.AsyncResult.ResultOps
 import uscala.result.specs2.ResultMatchers
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 
-class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers {
+class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
+                         with ExecutionEnvironment { def is(implicit ee: ExecutionEnv): Unit = {
 
   def resultGen: Gen[Result[Int, Int]] = for {
     i <- Gen.posNum[Int]
@@ -28,65 +30,63 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
   def fb(n: Int) = n + 2
   def longOp = Future(Thread.sleep(1.second.toMillis))
 
-  def attempt[A, B](a: AsyncResult[A, B]): Result[A, B] = attempt(a.underlying)
-  def attempt[T](f: Future[T]): T = Await.result(f, 0.5.seconds)
-
   "fold" >> {
     "should apply fa if the result is Fail" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).fold(fa, fb)) must_=== fa(n)
+      asyncFail(n).fold(fa, fb) must be_===(fa(n)).await
     }
     "should apply fb if the result is Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).fold(fa, fb)) must_=== fb(n)
+      asyncOk(n).fold(fa, fb) must be_===(fb(n)).await
     }
   }
 
   "map" >> {
     "should not apply f if the result is Fail" >> prop { n: Int =>
-      def a(i: Int) = i.toString
-      val b = AsyncResult.ok[Throwable, Int](1)
-      val c = b.map(a)
-      attempt(AsyncResult.fail(n).map(f)) must_=== Fail(n)
+      asyncFail(n).map(f).underlying must beFail(n).await
     }
     "should apply f if the result is Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).map(f)) must_=== Ok(f(n))
+      asyncOk(n).map(f).underlying must beOk(f(n)).await
     }
   }
 
   "leftMap" >> {
     "should apply f if the result is Fail" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).leftMap(f)) must_=== Fail(f(n))
+      asyncFail(n).leftMap(f).underlying must beFail(f(n)).await
     }
     "should not apply f if the result is Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).leftMap(f)) must_=== Ok(n)
+      asyncOk(n).leftMap(f).underlying must beOk(n).await
     }
   }
 
   "mapOk" >> {
     "should be an alias of map" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).mapOk(f)) must_=== Ok(n).map(f)
-      attempt(AsyncResult.fail(n).mapOk(f)) must_=== Fail(n).map(f)
+      asyncOk(n).mapOk(f).underlying must be_===(Ok(n).map(f)).await
+      asyncFail(n).mapOk(f).underlying must be_===(Fail(n).map(f)).await
     }
   }
 
   "mapFail" >> {
     "should be an alias of leftMap" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).mapFail(f)) must_=== Ok(n).leftMap(f)
-      attempt(AsyncResult.fail(n).mapFail(f)) must_=== Fail(n).leftMap(f)
+      asyncOk(n).mapFail(f).underlying must be_===(Ok(n).leftMap(f)).await
+      asyncFail(n).mapFail(f).underlying must be_===(Fail(n).leftMap(f)).await
     }
   }
 
   "flatMap" >> {
-    def fa(a: Int): AsyncResult[Int, Int] = if (a % 2 == 0) AsyncResult.ok(a) else AsyncResult.fail(a)
-    def fb(a: Int): AsyncResult[Int, Int] = if (a % 3 == 0) AsyncResult.ok(a) else AsyncResult.fail(a)
-    def fc(a: Int): AsyncResult[Int, Int] = if (a % 5 == 0) AsyncResult.ok(a) else AsyncResult.fail(a)
+    def fa(a: Int): AsyncResult[Int, Int] = if (a % 2 == 0) asyncOk(a) else asyncFail(a)
+    def fb(a: Int): AsyncResult[Int, Int] = if (a % 3 == 0) asyncOk(a) else asyncFail(a)
+    def fc(a: Int): AsyncResult[Int, Int] = if (a % 5 == 0) asyncOk(a) else asyncFail(a)
     "should not apply fa if the result is Fail" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).flatMap(fa)) must_=== Fail(n)
+      asyncFail(n).flatMap(fa).underlying must beFail(n).await
     }
     "should apply fa if the result is Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).flatMap(fa)) must_=== attempt(fa(n))
+      asyncOk(n).flatMap(fa).underlying.flatMap(res =>
+        fa(n).underlying.map(res === _)
+      ).await
     }
     "should be associative" >> prop { n: Int =>
-      attempt(fa(n).flatMap(fb).flatMap(fc)) must_=== attempt(fa(n).flatMap(x => fb(x).flatMap(fc)))
+      fa(n).flatMap(fb).flatMap(fc).underlying.flatMap(res =>
+        fa(n).flatMap(x => fb(x).flatMap(fc)).underlying.map(res === _)
+      ).await
     }
   }
 
@@ -95,13 +95,13 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
     def fb(a: Int): Result[Int, Int] = if (a % 3 == 0) Ok(a) else Fail(a)
     def fc(a: Int): Result[Int, Int] = if (a % 5 == 0) Ok(a) else Fail(a)
     "should not apply fa if the result is Fail" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).flatMapR(fa)) must_=== Fail(n)
+      asyncFail(n).flatMapR(fa).underlying must beFail(n).await
     }
     "should apply fa if the result is Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).flatMapR(fa)) must_=== fa(n)
+      asyncOk(n).flatMapR(fa).underlying must be_===(fa(n)).await
     }
     "should be associative" >> prop { n: Int =>
-      attempt(AsyncResult.fromResult(fa(n)).flatMapR(fb).flatMapR(fc)) must_=== fa(n).flatMap(x => fb(x).flatMap(fc))
+      fromResult(fa(n)).flatMapR(fb).flatMapR(fc).underlying must be_===(fa(n).flatMap(x => fb(x).flatMap(fc))).await
     }
   }
 
@@ -110,63 +110,67 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
     def fb(a: Int): Future[Int] = Future(a + 2)
     def fc(a: Int): Future[Int] = Future(a + 3)
     "should not apply fa if the result is Fail" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).flatMapF(fa)) must_=== Fail(n)
+      asyncFail(n).flatMapF(fa).underlying must beFail(n).await
     }
     "should apply fa if the result is Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).flatMapF(fa)).getOrElse(n - 1) must_=== attempt(fa(n))
+      asyncOk(n).flatMapF(fa).underlying.flatMap(res =>
+        fa(n).map(res === Ok(_))
+      ).await
     }
     "should be associative" >> prop { n: Int =>
-      attempt(AsyncResult.fromFuture(fa(n)).flatMapF(fb).flatMapF(fc)).getOrElse(n - 1) must_=== attempt(fa(n).flatMap(x => fb(x).flatMap(fc)))
+      fromFuture(fa(n)).flatMapF(fb).flatMapF(fc).underlying.flatMap(res =>
+        fa(n).flatMap(x => fb(x).flatMap(fc)).map(res === Ok(_))
+      ).await
     }
   }
 
   "bimap" >> {
     "should apply fa if the result is Fail" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).bimap(fa, fb)) must_=== Fail(fa(n))
+      asyncFail(n).bimap(fa, fb).underlying must beFail(fa(n)).await
     }
     "should apply fb if the result is Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).bimap(fa, fb)) must_=== Ok(fb(n))
+      asyncOk(n).bimap(fa, fb).underlying must beOk(fb(n)).await
     }
   }
 
   "merge" >> {
     "should return the value of Fail if it's a Fail" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).merge) must_=== n
+      asyncFail(n).merge must be_===(n).await
     }
     "should return the value of Ok if it's an Ok" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).merge) must_=== n
+      asyncOk(n).merge must be_===(n).await
     }
   }
 
   "swap" >> {
     "should move Fail value to Ok" >> prop { n: Int =>
-      attempt(AsyncResult.fail(n).swap) must_=== Ok(n)
+      asyncFail(n).swap.underlying must beOk(n).await
     }
     "should move Ok value to Fail" >> prop { n: Int =>
-      attempt(AsyncResult.ok(n).swap) must_=== Fail(n)
+      asyncOk(n).swap.underlying must beFail(n).await
     }
   }
 
   "attemptRun" >> {
     "Returns a result after successfully evaluating the future" >> prop { r: Result[Int, Int] =>
-      AsyncResult.fromResult(r).attemptRun must_=== Ok(r)
+      fromResult(r).attemptRun must_=== Ok(r)
     }
     "Returns a failed result with an exception on the left after failing to evaluate the future" >> prop { s: String =>
       val e = new RuntimeException(s)
-      AsyncResult.fromFuture(Future.failed(e)).attemptRun must_=== Fail(e)
+      fromFuture(Future.failed(e)).attemptRun must_=== Fail(e)
     }
     "Maps an exception from a failed future into the type of the left hand side of the result" >> prop { s: String =>
-      AsyncResult.fromFuture(Future.failed(new RuntimeException(s))).attemptRun(_.getMessage) must_=== Fail(s)
+      fromFuture(Future.failed(new RuntimeException(s))).attemptRun(_.getMessage) must_=== Fail(s)
     }
   }
 
   "attemptRunFor(Duration)" >> {
     "Returns a result after successfully evaluating the future" >> prop { r: Result[Int, Int] =>
-      AsyncResult.fromResult(r).attemptRunFor(1.millis) must_=== Ok(r)
+      fromResult(r).attemptRunFor(1.millis) must_=== Ok(r)
     }
 
     "Fails with an exception on the left of a result when execution times out" >> {
-      AsyncResult.fromFuture(longOp).attemptRunFor(1.millis) must beFail[Throwable].like {
+      fromFuture(longOp).attemptRunFor(1.millis) must beFail[Throwable].like {
         case a => a.getMessage must_=== "Futures timed out after [1 millisecond]"
       }
     }
@@ -174,101 +178,106 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers 
 
   "attemptRunFor(Throwable => AA, Duration)" >> {
     "Returns a result after successfully evaluating the future" >> prop { r: Result[Int, Int] =>
-      AsyncResult.fromResult(r).attemptRunFor(_ => -1, 1.millis) must_=== r
+      fromResult(r).attemptRunFor(_ => -1, 1.millis) must_=== r
     }
     "Returns a failed result of the underlying result type when execution times out" >> {
-      AsyncResult.fromFuture(longOp).attemptRunFor(_.getMessage, 1.millis) must_=== Fail("Futures timed out after [1 millisecond]")
+      fromFuture(longOp).attemptRunFor(_.getMessage, 1.millis) must_=== Fail("Futures timed out after [1 millisecond]")
     }
   }
 
   "StaticFunctions" >> {
     "fromResult" >> {
       "should create an AsyncResult of the same underlying types" >> prop { r: Result[Int, Int] =>
-        attempt(AsyncResult.fromResult(r)) must_=== r
+        fromResult(r).underlying must be_===(r).await
       }
     }
 
     "fromFuture" >> {
       "should create an Ok with the underlying future type" >> prop { n: Int =>
-        attempt(AsyncResult.fromFuture(Future(n))) must_=== Ok(n)
+        fromFuture(Future(n)).underlying must beOk(n).await
       }
     }
 
     "fail" >> {
       "should create a Fail" >> prop { n: Int =>
-        attempt(AsyncResult.fail(n)) must_=== Fail(n)
+        asyncFail(n).underlying must beFail(n).await
       }
     }
 
     "ok" >> {
       "should create an Ok" >> prop { n: Int =>
-        attempt(AsyncResult.ok(n)) must_=== Ok(n)
+        asyncOk(n).underlying must beOk(n).await
       }
     }
 
     "attemptSync" >> {
       "should catch any NonFatal exception and return it as a Fail" >> prop { e: Exception =>
         def fails() = throw e
-        attempt(AsyncResult.attemptSync(fails())) must_=== Fail(e)
+        attemptSync(fails()).underlying must beFail[Throwable](e).await
       }
       "should not catch a Fatal exception" >> {
-        def fails() = throw new StackOverflowError
-        AsyncResult.attemptSync(fails()) must throwA[StackOverflowError]
+        def fails() = throw new StackOverflowError("this is a test")
+        attemptSync(fails()) must throwA[StackOverflowError]
       }
       "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
-        attempt(AsyncResult.attemptSync(f(n))) must_=== Ok(f(n))
+        attemptSync(f(n)).underlying must beOk(f(n)).await
       }
     }
 
     "attempt" >> {
       "should catch any NonFatal exception and return it as a Fail" >> prop { e: Exception =>
         def fails = throw e
-        attempt(AsyncResult.attempt(fails)) must_=== Fail(e)
+        AsyncResult.attempt(fails).underlying must beFail[Throwable](e).await
       }
       "should not catch a Fatal exception" >> {
-        def fails = throw new OutOfMemoryError
+        def fails = throw new OutOfMemoryError("this is a test")
 
-        attempt(AsyncResult.attempt(fails)) must throwA[TimeoutException]
+        AsyncResult.attempt(fails).attemptRunFor(1.second).toTry.get must throwA[TimeoutException]
       }
       "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
-        attempt(AsyncResult.attempt(f(n))) must_=== Ok(f(n))
+        AsyncResult.attempt(f(n)).underlying must beOk(f(n)).await
       }
     }
 
     "attemptFuture" >> {
       "should wrap the exception of a failed future in te result" >> prop { e: Exception =>
-        attempt(AsyncResult.attemptFuture(Future.failed(e))) must_== Fail(e)
+        attemptFuture(Future.failed(e)).underlying must beFail[Throwable](e).await
       }
       "should not catch a Fatal exception" >> {
-        def willFail = Future(throw new OutOfMemoryError)
+        def willFail = Future(throw new OutOfMemoryError("this is a test"))
 
-        attempt(AsyncResult.attemptFuture(willFail)) must throwA[TimeoutException]
+        attemptFuture(willFail).attemptRunFor(1.second).toTry.get must throwA[TimeoutException]
       }
       "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
-        attempt(AsyncResult.attemptFuture(Future.successful(n))) must_=== Ok(n)
+        attemptFuture(Future.successful(n)).underlying must beOk(n).await
       }
     }
   }
 
-  "'monkey patching' functions" >> {
+  "ResultOps functions" >> {
+    import AsyncResult.ResultOps
     "async" >> {
       "should transform a failed result into an async result" >> prop { n: Int =>
-        attempt(Result.fail(n).async) must_=== attempt(AsyncResult.fail(n))
+        Result.fail[Int, Int](n).async.underlying.flatMap(res =>
+          asyncFail(n).underlying.map(_ === res)
+        ).await
       }
       "should transform a failed result into an async result" >> prop { n: Int =>
-        attempt(Result.ok(n).async) must_=== attempt(AsyncResult.ok(n))
+        Result.ok[Int, Int](n).async.underlying.flatMap(res =>
+          asyncOk(n).underlying.map(_ === res)
+        ).await
       }
     }
     "sequence" >> {
       "should transform a Seq(Fail) into a Fail(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-        (attempt(xs.map(AsyncResult.fail).sequence) must_=== Fail(xs.head))
+        (xs.map(asyncFail).sequence.underlying must beFail(xs.head).await)
       }
       "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-        (attempt(xs.map(AsyncResult.ok).sequence) must_=== Ok(xs))
+        (xs.map(asyncOk).sequence.underlying must beOk(xs).await)
       }
       "should transform an empty Seq into an Ok(Seq.empty)" >> {
-        attempt(Seq.empty[AsyncResult[Int, String]].sequence) must_=== Ok(Seq.empty[String])
+        Seq.empty[AsyncResult[Int, String]].sequence.underlying must beOk(Seq.empty[String]).await
       }
     }
   }
-}
+}}

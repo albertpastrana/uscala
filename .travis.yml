@@ -3,7 +3,7 @@ scala:
    - 2.11.8
 jdk: oraclejdk8
 script:
-  - sbt clean coverage test
+  - sbt clean coverage "testOnly -- showtimes true timeFactor 5 exclude no-ci"
   - sbt coverageReport
   - sbt coverageAggregate
   - sbt codacyCoverage
