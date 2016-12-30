@@ -25,8 +25,9 @@ scalacOptions in ThisBuild ++= Seq(
   "-deprecation",
   "-feature")
 
-lazy val root = (project in file(".")).
-  aggregate(i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `url`)
+lazy val root = (project in file("."))
+  .settings(releaseIgnoreUntrackedFiles := true)
+  .aggregate(i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `url`)
 
 lazy val i18n = project
 

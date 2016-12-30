@@ -232,7 +232,7 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
       "should not catch a Fatal exception" >> {
         def fails = throw new OutOfMemoryError("this is a test")
 
-        AsyncResult.attempt(fails).attemptRunFor(1.second).toTry.get must throwA[TimeoutException]
+        AsyncResult.attempt(fails).attemptRunFor(1.second) must beFail(beAnInstanceOf[TimeoutException])
       }
       "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
         AsyncResult.attempt(f(n)).underlying must beOk(f(n)).await
@@ -246,7 +246,7 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
       "should not catch a Fatal exception" >> {
         def willFail = Future(throw new OutOfMemoryError("this is a test"))
 
-        attemptFuture(willFail).attemptRunFor(1.second).toTry.get must throwA[TimeoutException]
+        attemptFuture(willFail).attemptRunFor(1.second) must beFail(beAnInstanceOf[TimeoutException])
       }
       "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
         attemptFuture(Future.successful(n)).underlying must beOk(n).await
