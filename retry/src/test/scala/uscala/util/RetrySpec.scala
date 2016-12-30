@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
+import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
 
@@ -13,10 +14,37 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
-class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
+class RetrySpec extends Specification with ScalaCheck with FutureMatchers { def is(implicit ee: ExecutionEnv): Unit = {
+
+  val counter = Array(0, 0, 0, 0, 0)
+  def fail(index: Int): Try[Int] = {
+    counter(index) += 1
+    if (counter(index) < 3) Failure(new Exception())
+    else Success(counter(index))
+  }
+
+  def constant(retry: Int, interval: Duration) = interval
+
+  //Exp -> retry #, min and max intervals
+  type Exp = (Int, Duration, Duration)
+  val exponential = List(
+    (1, 0.25.seconds, 0.75.seconds),
+    (2, 0.375.seconds, 1.125.seconds),
+    (3, 0.562.seconds, 1.687.seconds),
+    (4, 0.8435.seconds, 2.53.seconds),
+    (5, 1.265.seconds, 3.795.seconds),
+    (6, 1.897.seconds, 5.692.seconds),
+    (7, 2.846.seconds, 8.538.seconds),
+    (8, 4.269.seconds, 12.807.seconds),
+    (9, 6.403.seconds, 19.210.seconds),
+    (10, 9.605.seconds, 28.815.seconds)
+  )
+  def arbExpGenerator = Gen.oneOf(exponential)
+
+  implicit def abExp: Arbitrary[Exp] = Arbitrary(arbExpGenerator)
 
   "retry" >> {
-    "should return the value of the computation if it's successful" >> {
+    "should retun the value of the computation if it's successful" >> {
       Retry.retry(None)(Success(1)) must beASuccessfulTry(1)
     }
     "should retry until the computation is successful" >> {
@@ -31,7 +59,7 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
       val minWait = 25 + 37
       val maxWait = 75 + 112 + 150 //some extra time for the computation
       elapsed must be_>=(minWait)
-      elapsed must be_<=(maxWait)
+      elapsed must be_<=(maxWait * ee.timeFactor)
     }
     "should use the specified backoff strategy" >> {
       val pause = 50.millis
@@ -40,7 +68,7 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
       val elapsed = System.currentTimeMillis - start
 
       elapsed must be_>((pause * 2).toMillis)
-      elapsed must be_<((pause * 3).toMillis + 150) //adding some extra time for the computation
+      elapsed must be_<((pause * 3).toMillis * ee.timeFactor + 300) //adding some extra time for the computation
     }
     "should execute the specified failAction" >> {
       val errors = new ArrayBuffer[Throwable]
@@ -56,7 +84,6 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
 
   "forever" >> {
     "should never finish if the function is not successful" >> {
-      import scala.concurrent.ExecutionContext.Implicits.global
       val end = new AtomicBoolean(false)
       def err = if (end.get) Success(1) else Failure(new IllegalArgumentException)
       val result = Await.result(Future(Retry.forever[Int]()(err)), 1.second) must throwA[TimeoutException]
@@ -86,31 +113,4 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers {
     }
   }
 
-  val counter = Array(0, 0, 0, 0, 0)
-  def fail(index: Int): Try[Int] = {
-    counter(index) += 1
-    if (counter(index) < 3) Failure(new Exception())
-    else Success(counter(index))
-  }
-
-  def constant(retry: Int, interval: Duration) = interval
-
-  //Exp -> retry #, min and max intervals
-  type Exp = (Int, Duration, Duration)
-  val exponential = List(
-    (1, 0.25.seconds, 0.75.seconds),
-    (2, 0.375.seconds, 1.125.seconds),
-    (3, 0.562.seconds, 1.687.seconds),
-    (4, 0.8435.seconds, 2.53.seconds),
-    (5, 1.265.seconds, 3.795.seconds),
-    (6, 1.897.seconds, 5.692.seconds),
-    (7, 2.846.seconds, 8.538.seconds),
-    (8, 4.269.seconds, 12.807.seconds),
-    (9, 6.403.seconds, 19.210.seconds),
-    (10, 9.605.seconds, 28.815.seconds)
-  )
-  def arbExpGenerator = Gen.oneOf(exponential)
-
-  implicit def abExp: Arbitrary[Exp] = Arbitrary(arbExpGenerator)
-
-}
+}}
