@@ -1,6 +1,7 @@
 language: scala
 scala:
-   - 2.11.8
+   - 2.12.1
+   - 2.11.9
 jdk: oraclejdk8
 script:
   - sbt clean coverage "testOnly -- showtimes true timeFactor 5 exclude no-ci"

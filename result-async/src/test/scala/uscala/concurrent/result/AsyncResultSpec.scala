@@ -18,10 +18,7 @@ import scala.concurrent.duration._
 class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
                          with ExecutionEnvironment { def is(implicit ee: ExecutionEnv): Unit = {
 
-  def resultGen: Gen[Result[Int, Int]] = for {
-    i <- Gen.posNum[Int]
-    res <- Gen.oneOf(Ok[Int](_), Fail[Int](_))
-  } yield res(i)
+  def resultGen: Gen[Result[Int, Int]] = Gen.posNum[Int].flatMap(i => Gen.oneOf(Ok[Int](i), Fail[Int](i)))
 
   implicit def arbResult: Arbitrary[Result[Int, Int]] = Arbitrary(resultGen)
 
