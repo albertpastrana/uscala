@@ -5,9 +5,7 @@ scala:
 jdk: oraclejdk8
 script:
   - sbt clean coverage "testOnly -- showtimes true timeFactor 5 exclude no-ci"
-  - sbt coverageReport
-  - sbt coverageAggregate
-  - sbt codacyCoverage
+  - if [[ -n "$CODACY_PROJECT_TOKEN" ]]; then sbt coverageReport coverageAggregate codacyCoverage; else echo "Skipped coverage reporting since no token was found"; fi
 after_success:
   - sbt coveralls
   - bash <(curl -s https://codecov.io/bash)
