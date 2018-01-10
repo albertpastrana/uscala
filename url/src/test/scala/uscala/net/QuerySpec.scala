@@ -1,8 +1,5 @@
 package uscala.net
 
-import java.net.{URI, URL => JURL}
-
-import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import org.specs2.specification.core.Fragment

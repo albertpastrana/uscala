@@ -2,8 +2,8 @@ package uscala.resources
 
 import org.specs2.mutable.Specification
 
-import scala.io.{Codec, Source}
-import scala.util.Try
+import scala.io.Source
+import scala.util.{Failure, Success, Try}
 
 class ResourcesSpec extends Specification {
 
@@ -65,7 +65,13 @@ class ResourcesSpec extends Specification {
       }
       "asStream returns an invalid stream" >> {
         Resources.asStream(pakage) must beSome.which { stream =>
-          Try(stream.read()) must beAFailedTry
+          (Try(stream.read()) match {
+            // We can either get an actual Failure, or a Success(-1) which should be treated as a failure. Which one you
+            // get depends on whether you are using an SBT shell or an external SBT task to run the tests (resources
+            // can be read off disk or be compiled into a test JAR).
+            case Success(-1) => Failure(new RuntimeException("End of stream reached"))
+            case res => res
+          }) must beAFailedTry
         }
       }
       "listAsPaths should return a list with all the resources in package" >> {
@@ -78,7 +84,7 @@ class ResourcesSpec extends Specification {
       //for some reason this tests fails in travis but runs locally, so I'm disabling it
       tag("no-ci")
       "listAsStreams should return a list with readers pointing to all resources in the package" >> {
-        Resources.listAsStreams(pakage)(Codec.ISO8859) must beSome.which { it =>
+        Resources.listAsStreams(pakage) must beSome.which { it =>
           val first = it.next()
           first.read() must_=== 0xCA
           first.read() must_=== 0xFE

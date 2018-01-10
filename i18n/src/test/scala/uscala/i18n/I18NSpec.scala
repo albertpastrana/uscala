@@ -1,6 +1,5 @@
 package uscala.i18n
 
-import java.nio.charset.Charset
 import java.nio.file.Paths
 import java.util.{Date, Locale}
 

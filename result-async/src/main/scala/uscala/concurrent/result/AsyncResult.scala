@@ -49,13 +49,13 @@ final class AsyncResult[+A, +B](val underlying: Future[Result[A, B]]) extends Se
   def attemptRunFor(duration: Duration): Result[Throwable, Result[A, B]] =
     Result.attempt(Await.result(underlying, duration))
 
-  def attemptRunFor[AA >: A](f: Throwable => AA, duration: Duration)(implicit ec: ExecutionContext): Result[AA, B] =
+  def attemptRunFor[AA >: A](f: Throwable => AA, duration: Duration): Result[AA, B] =
     Result.attempt(Await.result(underlying, duration)).mapFail(f).flatMap(identity)
 
-  def attemptRun(implicit ec: ExecutionContext): Result[Throwable, Result[A, B]] =
+  def attemptRun: Result[Throwable, Result[A, B]] =
     attemptRunFor(Duration.Inf)
 
-  def attemptRun[AA >: A](f: Throwable => AA)(implicit ec: ExecutionContext): Result[AA, B] =
+  def attemptRun[AA >: A](f: Throwable => AA): Result[AA, B] =
     attemptRunFor(f, Duration.Inf)
 }
 
