@@ -1,6 +1,6 @@
 package uscala.i18n
 
-import java.io.{BufferedReader, File, FileInputStream, InputStreamReader}
+import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.Path
 import java.text.MessageFormat

@@ -16,9 +16,11 @@ scmInfo := Some(
 )
 
 releasePublishArtifactsAction in ThisBuild := PgpKeys.publishSigned.value
+releaseCrossBuild in ThisBuild := true
 
-scalaVersion in ThisBuild := "2.12.1"
-crossScalaVersions := Seq("2.11.9", "2.12.1")
+scalaVersion in ThisBuild := "2.12.4"
+crossScalaVersions := Seq("2.11.12", "2.12.4")
+
 scalacOptions in ThisBuild ++= Seq(
   "-Xlint",
   "-Xfatal-warnings",
@@ -31,17 +33,10 @@ lazy val root = (project in file("."))
   .aggregate(i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `url`)
 
 lazy val i18n = project
-
 lazy val resources = project
-
 lazy val result = project
-
 lazy val `result-async` = project.dependsOn(result, `result-specs2` % "test->compile")
-
 lazy val `result-specs2` = project.dependsOn(result)
-
 lazy val retry = project
-
 lazy val timeout = project
-
 lazy val `url` = project

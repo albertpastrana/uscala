@@ -6,7 +6,6 @@ import java.nio.file._
 import java.util
 
 import scala.collection.convert.Wrappers.JIteratorWrapper
-import scala.io.Codec
 import scala.util.Try
 
 object Resources {
@@ -67,7 +66,7 @@ object Resources {
   /**
     * Same as [[listAsPaths]] but mapping each element into an `InputStream`.
     */
-  def listAsStreams(pakage: String)(implicit codec: Codec): Option[Iterator[InputStream]] =
+  def listAsStreams(pakage: String): Option[Iterator[InputStream]] =
     listAsPaths(pakage).map { it =>
       it.collect {
         case path if isJar(path.toUri) => getClass.getResourceAsStream(path.toString)
