@@ -15,7 +15,7 @@ object Resources {
   /**
     * Null-safe alternative to `getClass.getResource(name)` as it
     * basically wraps its result in an `Option`.
-    * See [[java.lang.Class#getResource]] for more information.
+    * See java.lang.Class#getResource for more information.
     */
   def asURL(name: String): Option[URL] = Option(getClass.getResource(name))
 
