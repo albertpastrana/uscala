@@ -6,6 +6,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 final class AsyncResult[+A, +B](val underlying: Future[Result[A, B]]) extends Serializable {
 
@@ -78,7 +79,7 @@ object AsyncResult {
     AsyncResult(Future.successful(Result.attempt(f)))
 
   def attemptFuture[B](f: Future[B])(implicit ex: ExecutionContext): AsyncResult[Throwable, B] =
-    AsyncResult(f.map { res => Result.ok(res) }.recover { case tr => Result.fail(tr) })
+    AsyncResult(f.map { res => Result.ok(res) }.recover { case NonFatal(tr) => Result.fail(tr) })
 
   implicit class ResultOps[A, B](val res: Result[A, B]) {
     def async: AsyncResult[A, B] = AsyncResult.fromResult(res)
