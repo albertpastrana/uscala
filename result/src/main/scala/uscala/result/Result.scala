@@ -114,6 +114,16 @@ object Result extends ResultFunctions {
           a <- fa
         } yield r += a
       }.map(_.result())
+
+    def split(implicit bfe : CanBuildFrom[Nothing, E, M[E]], bfa : CanBuildFrom[Nothing, A, M[A]]): (M[E], M[A]) = {
+      val be = bfe()
+      val ba = bfa()
+      xs.foreach {
+        case Ok(v) => ba += v
+        case Fail(e) => be += e
+      }
+      (be.result, ba.result)
+    }
   }
 
   /**
