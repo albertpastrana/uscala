@@ -1,7 +1,5 @@
 package uscala.result
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import uscala.result.Result.{TraversableResult, Fail, Ok}
@@ -10,9 +8,9 @@ import scala.util.{Failure, Success}
 
 class ResultSpec extends Specification with ScalaCheck {
 
-  def f(n: Int) = n + 1
-  def fa(n: Int) = f(n)
-  def fb(n: Int) = n + 2
+  private def f(n: Int) = n + 1
+  private def fa(n: Int) = f(n)
+  private def fb(n: Int) = n + 2
 
   "fold" >> {
     "should apply fa if the result is Fail" >> prop { n: Int =>
@@ -157,16 +155,14 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "foreach" >> {
     "should not apply f if it's a Fail" >> prop { n: Int =>
-      val effect = new AtomicBoolean(false)
-      def sideEffect(i: Int) = effect.set(true)
-      Fail(n).foreach(sideEffect)
-      effect.get must beFalse
+      var executed = false
+      Fail(n).foreach(_ => executed = true)
+      executed must beFalse
     }
     "should apply f if it's an Ok" >> prop { n: Int =>
-      val effect = new AtomicBoolean(false)
-      def sideEffect(i: Int) = effect.set(true)
-      Ok(n).foreach(sideEffect)
-      effect.get must beTrue
+      var executed = false
+      Ok(n).foreach(_ => executed = true)
+      executed must beTrue
     }
   }
 
