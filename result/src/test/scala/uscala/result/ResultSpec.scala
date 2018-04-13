@@ -284,15 +284,29 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
-  "sequence for traversables" >> {
-    "should transform a Seq(Fail) into a Fail" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-      (xs.map(Result.fail).sequence must_=== Fail(xs.head))
+  "ops on traversables" >> {
+    "split" >> {
+      "should split a Seq[Result[E, A]] into a (Seq[E], Seq[A]) " >> prop { xs: Seq[Int] => xs.nonEmpty ==> {
+        val (fails, oks) = xs.map(x => if (x < 0) Fail(x) else Ok(x)).split
+        fails must contain(be_<(0)).foreach
+        oks must contain(be_>=(0)).foreach
+      }}
+      "should split an empty Seq into a (Seq.empty, Seq.empty)" >> {
+        val (fails, oks) = Seq.empty[Result[Int, String]].split
+        fails must_=== Seq.empty[Int]
+        oks must_=== Seq.empty[String]
+      }
     }
-    "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-      (xs.map(Result.ok).sequence must_=== Ok(xs))
-    }
-    "should transform an empty Seq into an Ok(Seq.empty)" >> {
-      Seq.empty[Result[Int, String]].sequence must_=== Ok(Seq.empty[String])
+    "sequence" >> {
+      "should transform a Seq(Fail) into a Fail" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
+        (xs.map(Result.fail).sequence must_=== Fail(xs.head))
+      }
+      "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
+        (xs.map(Result.ok).sequence must_=== Ok(xs))
+      }
+      "should transform an empty Seq into an Ok(Seq.empty)" >> {
+        Seq.empty[Result[Int, String]].sequence must_=== Ok(Seq.empty[String])
+      }
     }
   }
 
