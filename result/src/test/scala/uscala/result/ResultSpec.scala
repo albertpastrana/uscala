@@ -206,6 +206,18 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "flatten" >> {
+    "should transform a Ok(Ok(x)) into a Ok(x)" >> prop { n: Int =>
+      Ok(Ok(n)).flatten.toEither must beRight(n)
+    }
+    "should transform a Ok(Fail(x)) into a Fail(x)" >> prop { n: Int =>
+      Ok(Fail(n)).flatten.toEither must beLeft(n)
+    }
+    "should transform a Fail(x) into a Fail(x)" >> prop { n: Int =>
+      Fail(n).flatten.toEither must beLeft(n)
+    }
+  }
+
   "toEither" >> {
     "should put the Fail value on the left" >> prop { n: Int =>
       Fail(n).toEither must beLeft(n)
