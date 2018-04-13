@@ -13,19 +13,19 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     case Ok(b) => fb(b)
   }
 
-  def map[C](f: (B) => C) = this match {
+  def map[C](f: (B) => C): Result[A, C] = this match {
     case Ok(b) => Ok(f(b))
     case e @ Fail(_) => e
   }
 
-  def leftMap[C](f: (A) => C) = this match {
+  def leftMap[C](f: (A) => C): Result[C, B] = this match {
     case Fail(a) => Fail(f(a))
     case v @ Ok(_) => v
   }
 
-  def mapOk[C](f: (B) => C) = map(f)
+  def mapOk[C](f: (B) => C): Result[A, C] = map(f)
 
-  def mapFail[C](f: (A) => C) = leftMap(f)
+  def mapFail[C](f: (A) => C): Result[C, B] = leftMap(f)
 
   def flatMap[AA >: A, D](f: B => Result[AA, D]): Result[AA, D] = this match {
     case fail @ Result.Fail(_) => fail
@@ -35,6 +35,21 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
   def bimap[C, D](fa: A => C, fb: B => D): Result[C, D] = this match {
     case Fail(a) => Fail(fa(a))
     case Ok(b) => Ok(fb(b))
+  }
+
+  def filter[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] =
+    this match {
+      case fail @ Result.Fail(_) => fail
+      case ok @ Result.Ok(b) if predicate(b) => ok
+      case _ => Fail(orFailWith)
+    }
+
+  def filterNot[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] =
+    filter(!predicate(_), orFailWith)
+
+  def tap(sideEffect: B => Unit): Result[A, B] = this.map { x =>
+    sideEffect(x)
+    x
   }
 
   def swap: Result[B, A] = fold(Ok(_), Fail(_))
@@ -84,11 +99,41 @@ object Result extends ResultFunctions {
   }
 
   import scala.language.higherKinds
+
   implicit class TraversableResult[E, A, M[X] <: TraversableOnce[X]](xs: M[Result[E, A]]) {
     def sequence(implicit cbf: CanBuildFrom[M[Result[E, A]], A, M[A]]): Result[E, M[A]] =
-      xs.foldLeft(Result.ok[E, scala.collection.mutable.Builder[A, M[A]]](cbf(xs))) {
-        (fr, fa) => for (r <- fr; a <- fa) yield r += a
+      xs.foldLeft(Result.ok[E, scala.collection.mutable.Builder[A, M[A]]](cbf(xs))) { (fr, fa) =>
+        for {
+          r <- fr
+          a <- fa
+        } yield r += a
       }.map(_.result())
+  }
+
+  /**
+    * Add ability to sequence results in a Map, really useful for preserving keys but mapping values with a function
+    * that can fail.
+    */
+  implicit class MapResult[E, A, K, M[X, Y] <: scala.collection.Map[X, Y]](xs: M[K, Result[E, A]]) {
+    def sequence(implicit cbf: CanBuildFrom[M[K, Result[E, A]], (K, A), M[K, A]]): Result[E, M[K, A]] =
+      xs.foldLeft(Result.ok[E, scala.collection.mutable.Builder[(K, A), M[K, A]]](cbf(xs))) { case (fa, (k, fr)) =>
+        for {
+          a <- fa
+          r <- fr
+        } yield a +=((k, r))
+      }.map(_.result())
+  }
+
+  /**
+    * Specialised version of the filters for boolean results (they read better and it's actually a common use-case, eg.
+    * imagine checking whether something is true and wanting to fail on it.
+    */
+  implicit class ResultBooleanFilters[A](result: Result[A, Boolean]) {
+    def orIfFalse[C >: A](failWith: => C): Result[C, Boolean] =
+      result.filter(identity, failWith)
+
+    def orIfTrue[C >: A](failWith: => C): Result[C, Boolean] =
+      result.filterNot(identity, failWith)
   }
 
 }
