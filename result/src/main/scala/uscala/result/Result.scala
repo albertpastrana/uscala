@@ -37,12 +37,11 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     case Ok(b) => Ok(fb(b))
   }
 
-  def filter[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] =
-    this match {
-      case fail @ Result.Fail(_) => fail
-      case ok @ Result.Ok(b) if predicate(b) => ok
-      case _ => Fail(orFailWith)
-    }
+  def filter[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] = this match {
+    case fail @ Result.Fail(_) => fail
+    case ok @ Result.Ok(b) if predicate(b) => ok
+    case _ => Fail(orFailWith)
+  }
 
   def filterNot[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] =
     filter(!predicate(_), orFailWith)
