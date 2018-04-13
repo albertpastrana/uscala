@@ -100,6 +100,10 @@ object Result extends ResultFunctions {
 
   import scala.language.higherKinds
 
+  implicit class OptionResult[E, A](opt: Option[Result[E, A]]) {
+    def sequence: Result[E, Option[A]] = opt.fold(Result.ok[E, Option[A]](Option.empty[A]))(_.map(Option.apply))
+  }
+
   implicit class TraversableResult[E, A, M[X] <: TraversableOnce[X]](xs: M[Result[E, A]]) {
     def sequence(implicit cbf: CanBuildFrom[M[Result[E, A]], A, M[A]]): Result[E, M[A]] =
       xs.foldLeft(Result.ok[E, scala.collection.mutable.Builder[A, M[A]]](cbf(xs))) { (fr, fa) =>
