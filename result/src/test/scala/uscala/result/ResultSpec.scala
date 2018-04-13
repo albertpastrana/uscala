@@ -79,6 +79,50 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "filter" >> {
+    "should not apply the predicate if the result is already Fail" >> {
+      Fail("fail").filter(_ => true, "predicate fail") must_=== Fail("fail")
+    }
+    "should return Fail if the predicate returns false" >> prop { n: Int =>
+      Ok(n).filter(_ != n, "predicate fail") must_=== Fail("predicate fail")
+    }
+    "should return Ok if the predicate returns true" >> prop { n: Int =>
+      Ok(n).filter(_ == n, "predicate fail") must_=== Ok(n)
+    }
+  }
+
+  "filterNot" >> {
+    "should not apply the predicate if the result is already Fail" >> {
+      Fail("fail").filterNot(_ => true, "predicate fail") must_=== Fail("fail")
+    }
+    "should return Fail if the predicate returns true" >> prop { n: Int =>
+      Ok(n).filterNot(_ == n, "predicate fail") must_=== Fail("predicate fail")
+    }
+    "should return Ok if the predicate returns false" >> prop { n: Int =>
+      Ok(n).filterNot(_ != n, "predicate fail") must_=== Ok(n)
+    }
+  }
+
+  "tap" >> {
+    "should not execute the given f if Fail" >> prop { n: Int =>
+      var executed = false
+      Fail(n).tap { _ => executed = true }
+      executed must beFalse
+    }
+
+    "should execute the given f if Ok, passing the Ok value" >> prop { n: Int =>
+      var received: Option[Int] = None
+      Ok(n).tap { x => received = Some(x) }
+      received must beSome(n)
+    }
+
+    "should execute the given f if Ok, leaving the result untouched" >> prop { n: Int =>
+      var executed = false
+      Ok(n).tap { _ => executed = true } must_=== Ok(n)
+      executed must beTrue
+    }
+  }
+
   "swap" >> {
     "should move Fail value to Ok" >> prop { n: Int =>
       Fail(n).swap must_=== Ok(n)
@@ -216,9 +260,8 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
-  "sequence" >> {
-    import uscala.result.Result._
-    "should transform a Seq(Fail) into a Fail(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
+  "sequence for traversables" >> {
+    "should transform a Seq(Fail) into a Fail" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
       (xs.map(Result.fail).sequence must_=== Fail(xs.head))
     }
     "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
@@ -226,6 +269,40 @@ class ResultSpec extends Specification with ScalaCheck {
     }
     "should transform an empty Seq into an Ok(Seq.empty)" >> {
       Seq.empty[Result[Int, String]].sequence must_=== Ok(Seq.empty[String])
+    }
+  }
+
+  "sequence for maps" >> {
+    "should transform a Map(K -> Fail) into a Fail" >> prop { xs: Map[Int, Int] => xs.nonEmpty ==>
+      (xs.mapValues(Result.fail).sequence must_=== Fail(xs.values.head))
+    }
+    "should transform a Map(K -> Ok(V) into an Ok(Map(K -> V))" >> prop { xs: Map[Int, Int] => xs.nonEmpty ==>
+      (xs.mapValues(Result.ok).sequence must_=== Ok(xs))
+    }
+    "should transform an empty Map into an Ok(Map.empty)" >> {
+      Map.empty[Int, Result[Int, Int]].sequence must_=== Ok(Map.empty[Int, Int])
+    }
+  }
+
+  "boolean filters" >> {
+    "orIfFalse" >> {
+      "should leave an Ok(true) value alone" >> {
+        Ok(true).orIfFalse("predicate fail") must_== Ok(true)
+      }
+
+      "should transform an Ok(false) value to a Fail" >> {
+        Ok(false).orIfFalse("predicate fail") must_== Fail("predicate fail")
+      }
+    }
+
+    "orIfTrue" >> {
+      "should leave an Ok(false) value alone" >> {
+        Ok(false).orIfTrue("predicate fail") must_== Ok(false)
+      }
+
+      "should transform an Ok(true) value to a Fail" >> {
+        Ok(true).orIfTrue("predicate fail") must_== Fail("predicate fail")
+      }
     }
   }
 
