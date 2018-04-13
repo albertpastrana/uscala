@@ -74,6 +74,8 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     case _ => this
   }
 
+  def flatten[AA >: A, BB](implicit ev: B <:< Result[AA, BB]): Result[AA, BB] = this.flatMap(b => identity(ev(b)))
+
   def toEither: Either[A, B] = fold(Left(_), Right(_))
 
   def toOption: Option[B] = fold(_ => None, Some(_))
