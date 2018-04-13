@@ -1,6 +1,6 @@
 # μscala
 
-[![Build Status](https://img.shields.io/travis/albertpastrana/uscala/master.svg)](https://travis-ci.org/albertpastrana/uscala) [![Coverage Status] (https://img.shields.io/coveralls/albertpastrana/uscala.svg)](https://coveralls.io/github/albertpastrana/uscala?branch=master) [![codecov](https://codecov.io/gh/albertpastrana/uscala/branch/master/graph/badge.svg)](https://codecov.io/gh/albertpastrana/uscala) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ceb17c0f52dd400bb675d6d143b965c1)](https://www.codacy.com/app/albertpastrana/uscala)
+[![Build Status](https://img.shields.io/travis/albertpastrana/uscala/master.svg)](https://travis-ci.org/albertpastrana/uscala) [![Coverage Status](https://coveralls.io/repos/github/albertpastrana/uscala/badge.svg?branch=master)](https://coveralls.io/github/albertpastrana/uscala?branch=master) [![codecov](https://codecov.io/gh/albertpastrana/uscala/branch/master/graph/badge.svg)](https://codecov.io/gh/albertpastrana/uscala) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ceb17c0f52dd400bb675d6d143b965c1)](https://www.codacy.com/app/albertpastrana/uscala)
 
 μscala is a set of general purpose micro libraries written in Scala.
 
