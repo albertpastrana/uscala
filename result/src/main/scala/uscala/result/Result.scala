@@ -52,6 +52,8 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     x
   }
 
+  def bitap[U](sideEffect: => U): Result[A, B] = this.bimap(a => { sideEffect; a }, b => { sideEffect; b })
+
   def swap: Result[B, A] = fold(Ok(_), Fail(_))
 
   def merge[AA >: A](implicit ev: B <:< AA): AA = fold(identity, ev.apply)
