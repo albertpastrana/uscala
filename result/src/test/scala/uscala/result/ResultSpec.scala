@@ -106,19 +106,33 @@ class ResultSpec extends Specification with ScalaCheck {
   "tap" >> {
     "should not execute the given f if Fail" >> prop { n: Int =>
       var executed = false
-      Fail(n).tap { _ => executed = true }
+      Fail(n).tap(_ => executed = true)
       executed must beFalse
     }
 
     "should execute the given f if Ok, passing the Ok value" >> prop { n: Int =>
       var received: Option[Int] = None
-      Ok(n).tap { x => received = Some(x) }
+      Ok(n).tap(x => received = Some(x))
       received must beSome(n)
     }
 
     "should execute the given f if Ok, leaving the result untouched" >> prop { n: Int =>
       var executed = false
-      Ok(n).tap { _ => executed = true } must_=== Ok(n)
+      Ok(n).tap(_ => executed = true) must_=== Ok(n)
+      executed must beTrue
+    }
+  }
+
+  "bitap" >> {
+    "should execute the given effect if Fail, leaving the result untouched" >> prop { n: Int =>
+      var executed = false
+      Fail(n).bitap { executed = true } must_=== Fail(n)
+      executed must beTrue
+    }
+
+    "should execute the given effect if Ok, leaving the result untouched" >> prop { n: Int =>
+      var executed = false
+      Ok(n).bitap { executed = true } must_=== Ok(n)
       executed must beTrue
     }
   }
