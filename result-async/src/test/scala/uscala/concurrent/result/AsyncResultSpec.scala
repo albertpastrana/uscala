@@ -243,7 +243,7 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
       "should not catch a Fatal exception" >> {
         def willFail = Future(throw new OutOfMemoryError("this is a test"))
 
-        attemptFuture(willFail).attemptRunFor(1.second) must beFail(beAnInstanceOf[TimeoutException])
+        attemptFuture(willFail).attemptRunFor(100.millis) must beFail(beAnInstanceOf[TimeoutException])
       }
       "should wrap the result in an Ok no exception is thrown" >> prop { n: Int =>
         attemptFuture(Future.successful(n)).underlying must beOk(n).await
@@ -274,6 +274,28 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
       }
       "should transform an empty Seq into an Ok(Seq.empty)" >> {
         Seq.empty[AsyncResult[Int, String]].sequence.underlying must beOk(Seq.empty[String]).await
+      }
+    }
+  }
+
+  "FutureOps functions" >> {
+    import AsyncResult.FutureOps
+    "toFuture" >> {
+      "should transform a successful future into an ok async result" >> prop { n: Int =>
+        Future.successful(n).toResult.underlying must beOk(n).await
+      }
+      "should transform a failed future into a failed async result with the exception" >> prop { e: Exception =>
+        Future.failed(e).toResult.underlying must beFail[Throwable](e).await
+      }
+    }
+    "toFuture(recover)" >> {
+      val recover = (tr: Throwable) => tr.getMessage
+
+      "should transform a successful future into an ok async result" >> prop { n: Int =>
+        Future.successful(n).toResult(recover).underlying must beOk(n).await
+      }
+      "should transform a failed future into a failed async result with the result of the recover function" >> prop { e: Exception =>
+        Future.failed(e).toResult(recover).underlying must beFail(e.getMessage).await
       }
     }
   }

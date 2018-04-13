@@ -79,7 +79,14 @@ object AsyncResult {
     AsyncResult(Future.successful(Result.attempt(f)))
 
   def attemptFuture[B](f: Future[B])(implicit ex: ExecutionContext): AsyncResult[Throwable, B] =
-    AsyncResult(f.map { res => Result.ok(res) }.recover { case NonFatal(tr) => Result.fail(tr) })
+    AsyncResult(f.map(Result.ok).recover { case NonFatal(tr) => Result.fail(tr) })
+
+  implicit class FutureOps[B](val f: Future[B]) {
+    def toResult[A](implicit ec: ExecutionContext): AsyncResult[Throwable, B] = attemptFuture(f)
+
+    def toResult[A](recover: Throwable => A)(implicit ec: ExecutionContext): AsyncResult[A, B] =
+      attemptFuture(f).mapFail(recover)
+  }
 
   implicit class ResultOps[A, B](val res: Result[A, B]) {
     def async: AsyncResult[A, B] = AsyncResult.fromResult(res)
