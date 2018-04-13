@@ -260,6 +260,18 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "sequence for options" >> {
+    "should transform a Some(Fail) into a Fail" >> prop { x: Int =>
+      Some(Fail(x)).sequence must_=== Fail(x)
+    }
+    "should transform a Some(Ok) into an Ok(Some)" >> prop { x: Int =>
+      Some(Ok(x)).sequence must_=== Ok(Some(x))
+    }
+    "should transform None into an Ok(None)" >> {
+      Option.empty[Result[Int, String]].sequence must_=== Ok(None)
+    }
+  }
+
   "sequence for traversables" >> {
     "should transform a Seq(Fail) into a Fail" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
       (xs.map(Result.fail).sequence must_=== Fail(xs.head))
