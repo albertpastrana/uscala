@@ -6,7 +6,6 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
-import org.specs2.specification.mutable.ExecutionEnvironment
 import uscala.concurrent.result.AsyncResult.{attemptFuture, attemptSync, fromFuture, fromResult, fail => asyncFail, ok => asyncOk}
 import uscala.result.Result
 import uscala.result.Result.{Fail, Ok}
@@ -15,8 +14,7 @@ import uscala.result.specs2.ResultMatchers
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
-                         with ExecutionEnvironment { def is(implicit ee: ExecutionEnv): Unit = {
+class AsyncResultSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ResultMatchers {
 
   def resultGen: Gen[Result[Int, Int]] = Gen.posNum[Int].flatMap(i => Gen.oneOf(Ok[Int](i), Fail[Int](i)))
 
@@ -299,4 +297,4 @@ class AsyncResultSpec extends Specification with ScalaCheck with ResultMatchers
       }
     }
   }
-}}
+}
