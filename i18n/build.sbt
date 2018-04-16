@@ -12,5 +12,5 @@ scmInfo := Some(ScmInfo(browseUrl = new URL("https://github.com/albertpastrana/u
                         connection = "scm:git:git@github.com:albertpastrana/uscala.git"))
 
 libraryDependencies ++= Seq(
-  "org.specs2" %% "specs2-core" % "3.8.6" % "test"
+  Dependencies.Specs2Core
 )
