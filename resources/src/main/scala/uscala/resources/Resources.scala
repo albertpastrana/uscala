@@ -34,7 +34,7 @@ object Resources {
     *
     * So, consumers of this method, be careful.
     *
-    * See [[java.lang.Class#getResourceAsStream]] for more information.
+    * See `java.lang.Class#getResourceAsStream` for more information.
     */
   def asStream(name: String): Option[InputStream] = Option(getClass.getResourceAsStream(name))
 
