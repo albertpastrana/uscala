@@ -11,6 +11,8 @@ in scala.
 
 List is as follows:
 
+- [headed](headed/): an ultra simple "list" that ensures the existence
+  of at least an element (i.e. a non-empty list).
 - [i18n](i18n/): message internationalization scala micro library
   with no dependencies for the JVM.
 - [resources](resources/): helps dealing with resources in the classpath, allowing

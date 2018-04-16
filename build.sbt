@@ -30,8 +30,9 @@ scalacOptions in ThisBuild ++= Seq(
 
 lazy val root = (project in file("."))
   .settings(releaseIgnoreUntrackedFiles := true)
-  .aggregate(i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `url`)
+  .aggregate(headed, i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `url`)
 
+lazy val headed = project
 lazy val i18n = project
 lazy val resources = project
 lazy val result = project
