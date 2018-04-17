@@ -19,5 +19,4 @@ object Headed {
     def toHeaded: Option[Headed[T]] = Headed.fromList(list)
   }
 
-
 }
