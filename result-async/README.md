@@ -1,4 +1,4 @@
-# Result [![bintray](https://api.bintray.com/packages/albertpastrana/maven/uscala-result-async/images/download.svg) ](https://bintray.com/albertpastrana/maven/uscala-result-async/_latestVersion)
+# Result Async [![bintray](https://api.bintray.com/packages/albertpastrana/maven/uscala-result-async/images/download.svg) ](https://bintray.com/albertpastrana/maven/uscala-result-async/_latestVersion)
 
 A right biased union type that holds a value for an asynchronous/future successful
 computation or a value for a failed one.
