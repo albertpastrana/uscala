@@ -19,7 +19,7 @@ List is as follows:
   null-safe access and listing resources from packages.
 - [result](result/): a right biased union type that holds a value
   for a successful computation or a value for a failed one.
-- [result-async](result-async/): A right biased union type that holds a value
+- [result-async](result-async/): a right biased union type that holds a value
   for an asynchronous/future successful computation or a value for a failed one.
 - [result-specs2](result-specs2/): specs2 matchers for the result type
 - [retry](retry/): small utility that retries a computation until it is
@@ -28,6 +28,8 @@ List is as follows:
   of time has elapsed or not.
 - [try-ops](try-ops/): small library that adds some useful methods to `Try`
   like `sequence`.
+- [typed-env](typed-env/): allows to retrieve environment variables safely
+   and with types.
 - [url](url/): immutable URL class with some useful methods to construct
   it, get the params, convert it to other types...
 

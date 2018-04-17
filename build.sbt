@@ -19,7 +19,7 @@ releasePublishArtifactsAction in ThisBuild := PgpKeys.publishSigned.value
 releaseCrossBuild in ThisBuild := true
 
 scalaVersion in ThisBuild := "2.12.4"
-crossScalaVersions := Seq("2.11.12", "2.12.4")
+crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.4")
 
 scalacOptions in ThisBuild ++= Seq(
   "-Xlint",
@@ -30,7 +30,7 @@ scalacOptions in ThisBuild ++= Seq(
 
 lazy val root = (project in file("."))
   .settings(releaseIgnoreUntrackedFiles := true)
-  .aggregate(headed, i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `try-ops`, `url`)
+  .aggregate(headed, i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `try-ops`, `typed-env`, `url`)
 
 lazy val headed = project
 lazy val i18n = project
@@ -41,4 +41,5 @@ lazy val `result-specs2` = project.dependsOn(result)
 lazy val retry = project
 lazy val timeout = project
 lazy val `try-ops` = project
+lazy val `typed-env` = project.dependsOn(`try-ops`)
 lazy val `url` = project
