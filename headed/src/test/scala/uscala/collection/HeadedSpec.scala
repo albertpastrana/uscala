@@ -10,6 +10,10 @@ class HeadedSpec extends Spec { def is = s2"""
   ${ Headed(1, Nil).asList must_=== List(1) }
   ${ Headed(1, List(2)).asList must_=== List(1, 2) }
 
+  fromList should try to transform a List into a Headed
+  ${ Headed.fromList(List.empty[Int]) must beNone }
+  ${ Headed.fromList(List(1, 2)) must beSome(Headed(1, List(2))) }
+
  ListHeaded
 
   toHeaded should try to transform a List into a Headed
