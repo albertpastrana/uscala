@@ -1,6 +1,6 @@
 package uscala.collection
 
-case class Headed[T](head: T, tail: List[T]) {
+case class Headed[T](head: T, tail: List[T] = Nil) {
 
   val asList: List[T] = head :: tail
 
