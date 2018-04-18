@@ -11,6 +11,7 @@ class ResultSpec extends Specification with ScalaCheck {
   private def f(n: Int) = n + 1
   private def fa(n: Int) = f(n)
   private def fb(n: Int) = n + 2
+  val fail: Result[String, Int] = Fail("fail")
 
   "fold" >> {
     "should apply fa if the result is Fail" >> prop { n: Int =>
@@ -79,7 +80,7 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "filter" >> {
     "should not apply the predicate if the result is already Fail" >> {
-      Fail("fail").filter(_ => true, "predicate fail") must_=== Fail("fail")
+      fail.filter(_ => true, "predicate fail") must_=== Fail("fail")
     }
     "should return Fail if the predicate returns false" >> prop { n: Int =>
       Ok(n).filter(_ != n, "predicate fail") must_=== Fail("predicate fail")
@@ -91,7 +92,7 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "filterNot" >> {
     "should not apply the predicate if the result is already Fail" >> {
-      Fail("fail").filterNot(_ => true, "predicate fail") must_=== Fail("fail")
+      fail.filterNot(_ => true, "predicate fail") must_=== Fail("fail")
     }
     "should return Fail if the predicate returns true" >> prop { n: Int =>
       Ok(n).filterNot(_ == n, "predicate fail") must_=== Fail("predicate fail")
@@ -104,7 +105,8 @@ class ResultSpec extends Specification with ScalaCheck {
   "tap" >> {
     "should not execute the given f if Fail" >> prop { n: Int =>
       var executed = false
-      Fail(n).tap(_ => executed = true)
+      val fail: Result[Int, Int] = Fail(n)
+      fail.tap(_ => executed = true)
       executed must beFalse
     }
 
@@ -156,7 +158,8 @@ class ResultSpec extends Specification with ScalaCheck {
   "foreach" >> {
     "should not apply f if it's a Fail" >> prop { n: Int =>
       var executed = false
-      Fail(n).foreach(_ => executed = true)
+      val fail: Result[Int, Int] = Fail(n)
+      fail.foreach(_ => executed = true)
       executed must beFalse
     }
     "should apply f if it's an Ok" >> prop { n: Int =>
@@ -193,7 +196,7 @@ class ResultSpec extends Specification with ScalaCheck {
       else recovered must_=== Fail(n)
     }
     "should ignore it if it's an Ok" >> prop { n: Int =>
-      Ok(n).recover {
+      Result.attempt(n).recover {
        case _ => 1
       } must_=== Ok(n)
     }
@@ -210,7 +213,7 @@ class ResultSpec extends Specification with ScalaCheck {
       else recovered must_=== Fail(n)
     }
     "should ignore it if it's an Ok" >> prop { n: Int =>
-      Ok(n).recover {
+      Result.attempt(n).recover {
        case _ => 1
       } must_=== Ok(n)
     }

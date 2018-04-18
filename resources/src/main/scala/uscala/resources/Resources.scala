@@ -48,7 +48,7 @@ object Resources {
   def listAsPaths(pakage: String): Option[Iterator[Path]] = {
     def filesystem(uri: URI): Option[FileSystem] =
       Try(FileSystems.getFileSystem(uri)).recoverWith {
-        case e: FileSystemNotFoundException => Try(FileSystems.newFileSystem(uri, EmptyJMap))
+        case _: FileSystemNotFoundException => Try(FileSystems.newFileSystem(uri, EmptyJMap))
       }.toOption
 
     asURL(pakage)

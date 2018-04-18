@@ -23,7 +23,7 @@ class RetrySpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck
     else Success(counter(index))
   }
 
-  private def constant(retry: Int, interval: Duration) = interval
+  private val constant = (_: Int, interval: Duration) => interval
 
   //Exp -> retry #, min and max intervals
   type Exp = (Int, Duration, Duration)
@@ -72,7 +72,10 @@ class RetrySpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck
     }
     "should execute the specified failAction" >> {
       val errors = new ArrayBuffer[Throwable]
-      def failAction(tr: Throwable): Unit = errors += tr
+      def failAction(tr: Throwable): Unit = {
+        errors += tr
+        ()
+      }
       Retry.retry(None, failAction = failAction)(fail(3))
 
       errors must haveLength(2)

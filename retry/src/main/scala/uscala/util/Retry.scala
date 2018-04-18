@@ -8,10 +8,10 @@ object Retry {
 
   type Backoff = (Int, Duration) => Duration
 
-  val DefaultInterval = 0.5.seconds
+  val DefaultInterval: FiniteDuration = 0.5.seconds
 
   @inline
-  private def doNothing(t: Throwable) =  ()
+  private val doNothing = (_: Throwable) => ()
 
   /**
     * This function tries to synchronously execute a function forever,
@@ -42,7 +42,7 @@ object Retry {
               (f: => Try[T]): Try[T] = {
     @tailrec
     def loop(retry: Int): Try[T] = f match {
-      case s @ Success(v) => s
+      case s @ Success(_) => s
       case Failure(e) if maxRetries.forall(_ < retry) =>
         failAction(e)
         sleep(backoff(retry, interval))
@@ -76,9 +76,9 @@ object Retry {
 
   @inline
   def exponentialBackoff(retry: Int, interval: Duration): Duration =
-    interval * Math.pow(1.5, retry) * (Random.nextDouble() + 0.5)
+    interval * Math.pow(1.5, retry.toDouble) * (Random.nextDouble() + 0.5)
 
   @inline
-  private def sleep(time: Duration) = Thread.sleep(time.toMillis)
+  private def sleep(time: Duration): Unit = Thread.sleep(time.toMillis)
 
 }
