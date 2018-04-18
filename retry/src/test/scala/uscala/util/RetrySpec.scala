@@ -14,20 +14,20 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
-class RetrySpec extends Specification with ScalaCheck with FutureMatchers { def is(implicit ee: ExecutionEnv): Unit = {
+class RetrySpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with FutureMatchers {
 
-  val counter = Array(0, 0, 0, 0, 0)
-  def fail(index: Int): Try[Int] = {
+  private val counter = Array(0, 0, 0, 0, 0)
+  private def fail(index: Int): Try[Int] = {
     counter(index) += 1
     if (counter(index) < 3) Failure(new Exception())
     else Success(counter(index))
   }
 
-  def constant(retry: Int, interval: Duration) = interval
+  private def constant(retry: Int, interval: Duration) = interval
 
   //Exp -> retry #, min and max intervals
   type Exp = (Int, Duration, Duration)
-  val exponential = List(
+  private val exponential = List(
     (1, 0.25.seconds, 0.75.seconds),
     (2, 0.375.seconds, 1.125.seconds),
     (3, 0.562.seconds, 1.687.seconds),
@@ -39,7 +39,7 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers { def 
     (9, 6.403.seconds, 19.210.seconds),
     (10, 9.605.seconds, 28.815.seconds)
   )
-  def arbExpGenerator = Gen.oneOf(exponential)
+  private def arbExpGenerator = Gen.oneOf(exponential)
 
   implicit def abExp: Arbitrary[Exp] = Arbitrary(arbExpGenerator)
 
@@ -113,4 +113,4 @@ class RetrySpec extends Specification with ScalaCheck with FutureMatchers { def 
     }
   }
 
-}}
+}
