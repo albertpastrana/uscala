@@ -19,22 +19,22 @@ object Env {
     *
     * See: [[key]], [[orNone]].
     */
-  def orNoneSuffix[T: EnvConv](name: String, suffix: String, env: Env = DefaultEnv): Option[T] =
-    orNone(key(name, suffix), env).orElse(Env.orNone(name, env))
+  def orNoneSuffix[T: EnvConv](name: String, suffix: String)(env: Env = DefaultEnv): Option[T] =
+    orNone(key(name, suffix))(env).orElse(Env.orNone(name)(env))
 
   /**
     * Same as `orNoneSuffix.getOrElse(default)`
     * See [[orNoneSuffix]]
     */
-  def orElseSuffix[T: EnvConv](name: String, suffix: String, default: => T, env: Env = DefaultEnv): T =
-    orNoneSuffix(name, suffix, env).getOrElse(default)
+  def orElseSuffix[T: EnvConv](name: String, suffix: String, default: => T)(env: Env = DefaultEnv): T =
+    orNoneSuffix(name, suffix)(env).getOrElse(default)
 
   /**
     * Same as `orNone.getOrElse(default)`
     * See [[orNone]]
     */
-  def orElse[T: EnvConv](name: String, default: => T, env: Env = DefaultEnv): T =
-    orNone(name, env).getOrElse(default)
+  def orElse[T: EnvConv](name: String, default: => T)(env: Env = DefaultEnv): T =
+    orNone(name)(env).getOrElse(default)
 
   /**
     * Gets the value of the environment variable with name `name` and
@@ -42,7 +42,7 @@ object Env {
     * Will return Some(value) if the env variable is set and can be converted
     * to the specific type or None otherwise.
     */
-  def orNone[T: EnvConv](name: String, env: Env = DefaultEnv): Option[T] =
+  def orNone[T: EnvConv](name: String)(env: Env = DefaultEnv): Option[T] =
     convert(name, env).flatMap(_.toOption)
 
   private def convert[T: EnvConv](name: String, env: Env): Option[Try[T]] =
@@ -59,27 +59,27 @@ trait EnvConv[T] {
 
 object EnvConv {
 
-  implicit val EnvReadString: EnvConv[String] = new EnvConv[String] {
+  implicit object EnvReadString extends EnvConv[String] {
     override def fromString(value: String): Try[String] = Success(value)
   }
 
-  implicit val EnvReadDuration: EnvConv[Duration] = new EnvConv[Duration] {
+  implicit object EnvReadDuration extends EnvConv[Duration] {
     override def fromString(value: String): Try[Duration] = Try(Duration(value))
   }
 
-  implicit val EnvReadInt: EnvConv[Int] = new EnvConv[Int] {
+  implicit object EnvReadInt extends EnvConv[Int] {
     override def fromString(value: String): Try[Int] = Try(value.toInt)
   }
 
-  implicit val EnvReadLong: EnvConv[Long] = new EnvConv[Long] {
+  implicit object EnvReadLong extends EnvConv[Long] {
     override def fromString(value: String): Try[Long] = Try(value.toLong)
   }
 
-  implicit val EnvReadFloat: EnvConv[Float] = new EnvConv[Float] {
+  implicit object EnvReadFloat extends EnvConv[Float] {
     override def fromString(value: String): Try[Float] = Try(value.toFloat)
   }
 
-  implicit val EnvReadDouble: EnvConv[Double] = new EnvConv[Double] {
+  implicit object EnvReadDouble extends EnvConv[Double] {
     override def fromString(value: String): Try[Double] = Try(value.toDouble)
   }
 
@@ -90,11 +90,4 @@ object EnvConv {
     } yield ts
   }
 
-}
-
-object Test extends App {
-  println(Env.orElse("JAVA_HOME", "JH"))
-  println(Env.orNone[Int]("JAVA_HOME"))
-  println(Env.orElseSuffix("JAVA", "HOME", "JH"))
-  println(Env.orNoneSuffix[String]("JAVA", "HOME"))
 }

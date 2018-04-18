@@ -14,6 +14,10 @@ object Headed {
     case Nil => None
   }
 
+}
+
+object HeadedOps {
+
   implicit class ListHeaded[T](list: List[T]) {
     /** will return Some(Headed(list.head, list.tail)) if the list is not empty or None otherwise */
     def toHeaded: Option[Headed[T]] = Headed.fromList(list)
