@@ -19,22 +19,22 @@ object Env {
     *
     * See: [[key]], [[orNone]].
     */
-  def orNoneSuffix[T: EnvConv](name: String, suffix: String)(env: Env = DefaultEnv): Option[T] =
-    orNone(key(name, suffix))(env).orElse(Env.orNone(name)(env))
+  def orNoneSuffix[T: EnvConv](name: String, suffix: String, env: Env = DefaultEnv): Option[T] =
+    orNone(key(name, suffix), env).orElse(Env.orNone(name, env))
 
   /**
     * Same as `orNoneSuffix.getOrElse(default)`
     * See [[orNoneSuffix]]
     */
-  def orElseSuffix[T: EnvConv](name: String, suffix: String, default: => T)(env: Env = DefaultEnv): T =
-    orNoneSuffix(name, suffix)(env).getOrElse(default)
+  def orElseSuffix[T: EnvConv](name: String, suffix: String, default: => T, env: Env = DefaultEnv): T =
+    orNoneSuffix(name, suffix, env).getOrElse(default)
 
   /**
     * Same as `orNone.getOrElse(default)`
     * See [[orNone]]
     */
-  def orElse[T: EnvConv](name: String, default: => T)(env: Env = DefaultEnv): T =
-    orNone(name)(env).getOrElse(default)
+  def orElse[T: EnvConv](name: String, default: => T, env: Env = DefaultEnv): T =
+    orNone(name, env).getOrElse(default)
 
   /**
     * Gets the value of the environment variable with name `name` and
@@ -42,7 +42,7 @@ object Env {
     * Will return Some(value) if the env variable is set and can be converted
     * to the specific type or None otherwise.
     */
-  def orNone[T: EnvConv](name: String)(env: Env = DefaultEnv): Option[T] =
+  def orNone[T: EnvConv](name: String, env: Env = DefaultEnv): Option[T] =
     convert(name, env).flatMap(_.toOption)
 
   private def convert[T: EnvConv](name: String, env: Env): Option[Try[T]] =
