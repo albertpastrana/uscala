@@ -1,7 +1,7 @@
 package uscala.util
 
 import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
@@ -99,12 +99,18 @@ class RetrySpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck
   }
 
   "until" >> {
+    val err = new IllegalArgumentException
+    val res = 1
+    def failUntil(successAt: Int, cnt: AtomicInteger) =
+      if (cnt.incrementAndGet() == successAt) Success(res) else Failure(err)
+
     "should finish after max retries if the function is not successful" >> {
-      val err = new IllegalArgumentException
-      Retry.until[Int](2)(Failure(err)) must beAFailedTry(err)
+      val cnt = new AtomicInteger
+      Retry.retry(Some(2))(failUntil(3, cnt)) must beAFailedTry(err)
     }
     "should return the successful try if the computation is successful" >> {
-      Retry.until(2)(Success(1)) must beASuccessfulTry(1)
+      val cnt = new AtomicInteger
+      Retry.until(3)(failUntil(3, cnt)) must beASuccessfulTry(res)
     }
   }
 

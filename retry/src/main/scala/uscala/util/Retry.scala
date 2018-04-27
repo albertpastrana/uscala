@@ -43,10 +43,10 @@ object Retry {
     @tailrec
     def loop(retry: Int): Try[T] = f match {
       case s @ Success(_) => s
-      case Failure(e) if maxRetries.forall(_ < retry) =>
+      case Failure(e) if maxRetries.forall(_ > retry) =>
         failAction(e)
         sleep(backoff(retry, interval))
-        loop(retry)
+        loop(retry + 1)
       case fail => fail
     }
     loop(1)
