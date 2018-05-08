@@ -15,7 +15,7 @@ case class URL(scheme: String,
 
   import URL._
 
-  lazy val path = rawPath.map(URL.decode)
+  lazy val path: Option[String] = rawPath.map(URL.decode)
 
   lazy val asURI: URI = new URI(asString)
 
@@ -112,7 +112,7 @@ final case class NonEmptyQuery(underlying: Map[String, List[String]]) extends Qu
 
   override def asString: String =
     "?" + underlying.flatMap {
-      case (key, Nil) => key
+      case (key, Nil) => List(key)
       case (key, values) => values.map(v => s"$key=${URL.encode(v)}")
     }.mkString("&")
 
@@ -120,12 +120,11 @@ final case class NonEmptyQuery(underlying: Map[String, List[String]]) extends Qu
 
 object Query {
 
-  val empty = Empty
+  val empty: Empty.type = Empty
 
   def apply(rawQuery: String): Try[Query] = Try {
-    Option(rawQuery).map { query =>
-      if (query.isEmpty) Map.empty[String, List[String]]
-      else query.split('&').map(_.split('=')).collect {
+    Option(rawQuery).collect { case query if query.nonEmpty =>
+      query.split('&').map(_.split('=')).collect {
         case Array(key, value) => key -> URL.decode(value)
         case Array(key) => key -> ""
         case a @ Array(key, _*) => key -> a.tail.mkString("=")

@@ -6,8 +6,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import org.specs2.specification.core.Fragment
-
-import URL._
+import uscala.net.URL._
 
 class URLSpec extends Specification with ScalaCheck with TestData {
 
@@ -69,15 +68,15 @@ class URLSpec extends Specification with ScalaCheck with TestData {
   "path" >> {
     "should decode the rawPath correctly" >> {
       "when it has a space" >> {
-        URL("http://example.com/hello%20world/").map(_.path) must beASuccessfulTry(Some("/hello world/"))
+        URL("http://example.com/hello%20world/").map(_.path) must beASuccessfulTry(Option("/hello world/"))
       }
       "when it has an encoded `/` and `?` in it" >> {
-        URL("http://example.com/a%2Fb%3Fc").map(_.path) must beASuccessfulTry(Some("/a/b?c"))
+        URL("http://example.com/a%2Fb%3Fc").map(_.path) must beASuccessfulTry(Option("/a/b?c"))
       }
     }
   }
 
-  def equivalentURI(u: StringUrl)(res: URI) = {
+  private def equivalentURI(u: StringUrl)(res: URI) = {
     val expected = new URI(u)
     res.getScheme must_== expected.getScheme  aka "scheme"
     res.getUserInfo must_== expected.getUserInfo
@@ -85,23 +84,24 @@ class URLSpec extends Specification with ScalaCheck with TestData {
     res.getPort must_== expected.getPort
     res.getRawPath must_== expected.getRawPath
     res.getPath must_== expected.getPath
-    Option(res.getQuery).map(_.split('&').toSet) must_== Option(expected.getQuery).map(_.split('&').toSet)
+    queryToSet(res.getQuery) must_=== queryToSet(expected.getQuery)
     res.getFragment must_== expected.getFragment
   }
 
-  def equivalentJURL(u: StringUrl)(res: JURL) = {
-    def sameQuery(q1: Option[String], q2: Option[String]) =
-      q1.map(URL.decode).map(_.split('&').toSet) must_== q2.map(URL.decode).map(_.split('&').toSet)
+  private def equivalentJURL(u: StringUrl)(res: JURL) = {
     val expected = new JURL(u)
-    res.getProtocol must_== expected.getProtocol
-    res.getUserInfo must_== expected.getUserInfo
-    res.getHost must_== expected.getHost
-    res.getPort must_== expected.getPort
-    res.getAuthority must_== expected.getAuthority
-    res.getPath must_== expected.getPath
-    sameQuery(Option(res.getQuery), Option(expected.getQuery))
-    res.getRef must_== expected.getRef
+    res.getProtocol must_=== expected.getProtocol
+    res.getUserInfo must_=== expected.getUserInfo
+    res.getHost must_=== expected.getHost
+    res.getPort must_=== expected.getPort
+    res.getAuthority must_=== expected.getAuthority
+    res.getPath must_=== expected.getPath
+    queryToSet(res.getQuery) must_=== queryToSet(expected.getQuery)
+    res.getRef must_=== expected.getRef
   }
+
+  private def queryToSet(q: String) =
+    Option(q).map(URL.decode).map(_.split('&').toSet.filter(_.nonEmpty)).filter(_.nonEmpty)
 
   "asString should provide an equivalent URI" >> prop { u: StringUrl =>
     URL(u).map(u => new URI(u.asString)) must beASuccessfulTry.which(equivalentURI(u))
@@ -164,7 +164,7 @@ trait TestData {
   //TODO include some examples from: https://www.talisman.org/~erlkonig/misc/lunatech%5ewhat-every-webdev-must-know-about-url-encoding/
   val testUrls = List(
     "http://host" -> URL(scheme = "http", host = "host", rawPath = Some("")),
-    "https://host?" -> URL(scheme = "https", host = "host", rawPath = Some(""), query = NonEmptyQuery(Map.empty)),
+    "https://host?" -> URL(scheme = "https", host = "host", rawPath = Some("")),
     "ftp://example.com/" -> URL(scheme = "ftp", host = "example.com", rawPath = Some("/")),
     "http://host/a%20path" -> URL(scheme = "http", host = "host", rawPath = Some("/a%20path")),
     "http://user:password@example.com:2/p/a/t/h?foo=bar&key=value#foo"
@@ -176,11 +176,11 @@ trait TestData {
              query = NonEmptyQuery(Map("foo" -> List("bar"), "encoded" -> List("/-(4) & a"))))
   )
 
-  val testUris = testUrls.map { case (u, _) => new URI(u) }
+  val testUris: List[URI] = testUrls.map { case (u, _) => new URI(u) }
 
   type StringUrl = String
 
-  def abStringUrlGen = Gen.oneOf(testUrls.map { case (u, _) => u })
+  def abStringUrlGen: Gen[StringUrl] = Gen.oneOf(testUrls.map { case (u, _) => u })
 
   implicit def abStrings: Arbitrary[StringUrl] = Arbitrary(abStringUrlGen)
 
