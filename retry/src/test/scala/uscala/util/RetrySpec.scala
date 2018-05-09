@@ -30,14 +30,14 @@ class RetrySpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck
   private val exponential = List(
     (1, 0.25.seconds, 0.75.seconds),
     (2, 0.375.seconds, 1.125.seconds),
-    (3, 0.562.seconds, 1.687.seconds),
-    (4, 0.8435.seconds, 2.53.seconds),
-    (5, 1.265.seconds, 3.795.seconds),
-    (6, 1.897.seconds, 5.692.seconds),
-    (7, 2.846.seconds, 8.538.seconds),
-    (8, 4.269.seconds, 12.807.seconds),
-    (9, 6.403.seconds, 19.210.seconds),
-    (10, 9.605.seconds, 28.815.seconds)
+    (3, 0.561.seconds, 1.688.seconds),
+    (4, 0.843.seconds, 2.532.seconds),
+    (5, 1.265.seconds, 3.797.seconds),
+    (6, 1.898.seconds, 5.696.seconds),
+    (7, 2.847.seconds, 8.543.seconds),
+    (8, 4.271.seconds, 12.814.seconds),
+    (9, 6.407.seconds, 19.221.seconds),
+    (10, 9.610.seconds, 28.833.seconds)
   )
   private def arbExpGenerator = Gen.oneOf(exponential)
 
