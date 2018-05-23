@@ -1,6 +1,7 @@
 # μscala
 
 [![Build Status](https://travis-ci.org/albertpastrana/uscala.svg?branch=master)](https://travis-ci.org/albertpastrana/uscala) [![Coverage Status](https://coveralls.io/repos/github/albertpastrana/uscala/badge.svg?branch=master)](https://coveralls.io/github/albertpastrana/uscala?branch=master) [![codecov](https://codecov.io/gh/albertpastrana/uscala/branch/master/graph/badge.svg)](https://codecov.io/gh/albertpastrana/uscala) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ceb17c0f52dd400bb675d6d143b965c1)](https://www.codacy.com/app/albertpastrana/uscala) [![Known Vulnerabilities](https://snyk.io/test/github/albertpastrana/uscala/badge.svg?targetFile=build.sbt)](https://snyk.io/test/github/albertpastrana/uscala?targetFile=build.sbt)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Falbertpastrana%2Fuscala.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Falbertpastrana%2Fuscala?ref=badge_shield)
 
 μscala is a set of general purpose micro libraries written in Scala.
 
@@ -62,6 +63,9 @@ requisites:
 - Shall be well tested
 - Shall be MIT licensed unless for licensing compatibility issues a
   different open source license is needed.
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Falbertpastrana%2Fuscala.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Falbertpastrana%2Fuscala?ref=badge_large)
 
 ## Can I contribute?
 
