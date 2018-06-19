@@ -2,8 +2,6 @@ package uscala.concurrent.result
 
 import uscala.result.Result
 
-import scala.collection.generic.CanBuildFrom
-import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -60,7 +58,7 @@ final class AsyncResult[+A, +B](val underlying: Future[Result[A, B]]) extends Se
     attemptRunFor(f, Duration.Inf)
 }
 
-object AsyncResult {
+object AsyncResult extends AsyncResultImplicits {
 
   def apply[A, B](f: Future[Result[A, B]]) = new AsyncResult(f)
 
@@ -91,13 +89,4 @@ object AsyncResult {
   implicit class ResultOps[A, B](val res: Result[A, B]) {
     def async: AsyncResult[A, B] = AsyncResult.fromResult(res)
   }
-
-  import scala.language.higherKinds
-  implicit class TraversableAsyncResult[E, A, M[X] <: TraversableOnce[X]](xs: M[AsyncResult[E, A]]) {
-    def sequence(implicit cbf: CanBuildFrom[M[AsyncResult[E, A]], A, M[A]], executor: ExecutionContext): AsyncResult[E, M[A]] =
-      xs.foldLeft(AsyncResult.ok[E, mutable.Builder[A, M[A]]](cbf(xs))) {
-        (fr, fa) => for (r <- fr; a <- fa) yield r += a
-      }.map(_.result())(executor)
-  }
-
 }

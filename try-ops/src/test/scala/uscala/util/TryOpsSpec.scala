@@ -18,7 +18,7 @@ class TryOpsSpec extends Specification with ScalaCheck {
       }
       "should transform a list of Failure into a failure with the first exception" >> prop {
         xs: Seq[Exception] => xs.nonEmpty ==> {
-          xs.map(x => Try(throw x)).sequence must beAFailedTry(xs.head)
+          xs.map(x => Try[Int](throw x)).sequence must beAFailedTry(xs.head)
         }
       }
       "should transform a list with successes and failures into a failure with the first exception" >> {

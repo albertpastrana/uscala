@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val Specs2 = "4.0.3"
+    val Specs2 = "4.3.0"
   }
 
   // Libraries

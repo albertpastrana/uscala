@@ -265,10 +265,10 @@ class AsyncResultSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     }
     "sequence" >> {
       "should transform a Seq(Fail) into a Fail(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-        (xs.map(asyncFail).sequence.underlying must beFail(xs.head).await)
+        (xs.map(asyncFail[Int, Int]).sequence.underlying must beFail(xs.head).await)
       }
       "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-        (xs.map(asyncOk).sequence.underlying must beOk(xs).await)
+        (xs.map(asyncOk[Int, Int]).sequence.underlying must beOk(xs).await)
       }
       "should transform an empty Seq into an Ok(Seq.empty)" >> {
         Seq.empty[AsyncResult[Int, String]].sequence.underlying must beOk(Seq.empty[String]).await

@@ -1,6 +1,6 @@
 package uscala.util
 
-import scala.collection.convert.Wrappers.JMapWrapper
+import collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.util.{Success, Try}
 import uscala.util.TryOps._
@@ -10,7 +10,7 @@ object Env {
   type Env = Map[String, String]
 
   /** The default map of environment variables will come from `System.getenv` */
-  val DefaultEnv: Env = JMapWrapper(System.getenv).toMap
+  val DefaultEnv: Env = System.getenv.asScala.toMap
 
   /**
     * Will try to get the environment variable named `name_suffix` and convert it.

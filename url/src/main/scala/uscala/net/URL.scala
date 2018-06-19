@@ -130,6 +130,7 @@ object Query {
         case a @ Array(key, _*) => key -> a.tail.mkString("=")
       }.groupBy { case (key, _) => key }
        .mapValues(_.toList.map{ case (_, v) => v }.filter(_.nonEmpty))
+       .toMap
     }.fold[Query](Empty)(NonEmptyQuery)
   }
 

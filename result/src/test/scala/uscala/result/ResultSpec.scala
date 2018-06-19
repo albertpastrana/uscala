@@ -2,7 +2,7 @@ package uscala.result
 
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
-import uscala.result.Result.{TraversableResult, Fail, Ok}
+import uscala.result.Result._
 
 import scala.util.{Failure, Success}
 
@@ -312,10 +312,10 @@ class ResultSpec extends Specification with ScalaCheck {
     }
     "sequence" >> {
       "should transform a Seq(Fail) into a Fail" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-        (xs.map(Result.fail).sequence must_=== Fail(xs.head))
+        (xs.map(Result.fail[Int, Int]).sequence must_=== Fail(xs.head))
       }
       "should transform a Seq(Ok) into an Ok(Seq)" >> prop { xs: Seq[Int] => xs.nonEmpty ==>
-        (xs.map(Result.ok).sequence must_=== Ok(xs))
+        (xs.map(Result.ok[Int, Int]).sequence must_=== Ok(xs))
       }
       "should transform an empty Seq into an Ok(Seq.empty)" >> {
         Seq.empty[Result[Int, String]].sequence must_=== Ok(Seq.empty[String])
@@ -325,10 +325,10 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "sequence for maps" >> {
     "should transform a Map(K -> Fail) into a Fail" >> prop { xs: Map[Int, Int] => xs.nonEmpty ==>
-      (xs.mapValues(Result.fail).sequence must_=== Fail(xs.values.head))
+      (xs.mapValues(Result.fail[Int, Int]).toMap.sequence must_=== Fail(xs.values.head))
     }
     "should transform a Map(K -> Ok(V) into an Ok(Map(K -> V))" >> prop { xs: Map[Int, Int] => xs.nonEmpty ==>
-      (xs.mapValues(Result.ok).sequence must_=== Ok(xs))
+      (xs.mapValues(Result.ok[Int, Int]).toMap.sequence must_=== Ok(xs))
     }
     "should transform an empty Map into an Ok(Map.empty)" >> {
       Map.empty[Int, Result[Int, Int]].sequence must_=== Ok(Map.empty[Int, Int])
