@@ -18,8 +18,8 @@ scmInfo := Some(
 releasePublishArtifactsAction in ThisBuild := PgpKeys.publishSigned.value
 releaseCrossBuild in ThisBuild := true
 
-scalaVersion in ThisBuild := "2.12.4"
-crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.4")
+scalaVersion in ThisBuild := "2.12.6"
+crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.6", "2.13.0-M4")
 
 // scalac 2.11 flags from https://tpolecat.github.io/2014/04/11/scalac-flags.html
 lazy val scalacOptions211 = Seq(
@@ -89,8 +89,17 @@ lazy val scalacOptions212 = Seq(
   "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
 )
 
+// scalac 2.13 flags, adapted from the 2.12 ones above, but with the flags that have been removed taken out. Next to
+// each item is a link to the Scala commit that explains why it was removed.
+lazy val scalacOptions213 = (scalacOptions212.toSet -- Set(
+  "-encoding", "utf-8", // No longer supported, UTF-8 is assumed.
+  "-Yno-adapted-args", // https://github.com/scala/scala/commit/a82a56ea5ba1ff0fb3b69c0963d4aec620ab68ad,
+  "-Ypartial-unification" // https://github.com/scala/scala/commit/7d5e0b01c7f645e4f727f704a18f93ce5c69a9dd
+)).toSeq
+
 def scalacOptionsVersion(scalaVersion: String) = {
   CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, scalaMajor)) if scalaMajor == 13 => scalacOptions213
     case Some((2, scalaMajor)) if scalaMajor == 12 => scalacOptions212
     case _ => scalacOptions211
   }
@@ -98,18 +107,30 @@ def scalacOptionsVersion(scalaVersion: String) = {
 
 scalacOptions in ThisBuild ++= scalacOptionsVersion(scalaVersion.value)
 
+// Adds a `src/main/scala-2.13+` source directory for Scala 2.13 and newer
+// and a `src/main/scala-2.13-` source directory for Scala version older than 2.13
+val scala213Compat = Seq(
+  unmanagedSourceDirectories in Compile += {
+    val sourceDir = (sourceDirectory in Compile).value
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, scalaMajor)) if scalaMajor == 13 => sourceDir / "scala-2.13+"
+      case _ => sourceDir / "scala-2.13-"
+    }
+  }
+)
+
 lazy val root = (project in file("."))
   .settings(releaseIgnoreUntrackedFiles := true)
   .aggregate(headed, i18n, resources, result, `result-async`, `result-specs2`, retry, timeout, `try-ops`, `typed-env`, `url`)
 
-lazy val headed = project
-lazy val i18n = project
-lazy val resources = project
-lazy val result = project
-lazy val `result-async` = project.dependsOn(result, `result-specs2` % "test->compile")
-lazy val `result-specs2` = project.dependsOn(result)
-lazy val retry = project
-lazy val timeout = project
-lazy val `try-ops` = project
-lazy val `typed-env` = project.dependsOn(`try-ops`)
-lazy val `url` = project
+lazy val headed = project.settings(scala213Compat)
+lazy val i18n = project.settings(scala213Compat)
+lazy val resources = project.settings(scala213Compat)
+lazy val result = project.settings(scala213Compat)
+lazy val `result-async` = project.settings(scala213Compat).dependsOn(result, `result-specs2` % "test->compile")
+lazy val `result-specs2` = project.settings(scala213Compat).dependsOn(result)
+lazy val retry = project.settings(scala213Compat)
+lazy val timeout = project.settings(scala213Compat)
+lazy val `try-ops` = project.settings(scala213Compat)
+lazy val `typed-env` = project.settings(scala213Compat).dependsOn(`try-ops`)
+lazy val `url` = project.settings(scala213Compat)
