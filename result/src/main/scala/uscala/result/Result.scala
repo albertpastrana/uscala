@@ -91,7 +91,7 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
 
   def toTry(implicit ev: A <:< Throwable): Try[B] = fold(Failure(_), Success(_))
 
-  def isOk: Boolean
+  val isOk: Boolean
 
   def isFail: Boolean = !isOk
 
@@ -100,11 +100,11 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
 object Result extends ResultFunctions with ResultBuildFromImplicits {
 
   final case class Fail[+A](a: A) extends Result[A, Nothing] {
-    override def isOk: Boolean = false
+    override val isOk: Boolean = false
   }
 
   final case class Ok[+B](b: B) extends Result[Nothing, B] {
-    override def isOk: Boolean = true
+    override val isOk: Boolean = true
   }
 
   implicit class OptionResult[E, A](opt: Option[Result[E, A]]) {
