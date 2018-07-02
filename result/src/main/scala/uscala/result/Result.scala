@@ -50,6 +50,13 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     x
   }
 
+  def tapOk(sideEffect: B => Unit): Result[A, B] = this.tap(sideEffect)
+
+  def tapFail(sideEffect: A => Unit): Result[A, B] = this.mapFail { x =>
+    sideEffect(x)
+    x
+  }
+
   def bitap[U](sideEffect: => U): Result[A, B] = this.bimap(a => { sideEffect; a }, b => { sideEffect; b })
 
   def swap: Result[B, A] = fold(Ok(_), Fail(_))
