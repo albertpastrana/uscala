@@ -306,6 +306,35 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "toResult" >> {
+    "for Option" >> {
+      "should create a Fail if it's None" >> prop { n: Int =>
+        Option.empty[Int].toResult(n) must_=== Fail(n)
+      }
+      "should create an Ok if it's Some" >> prop { n: Int =>
+        Option(n).toResult(1) must_=== Ok(n)
+      }
+    }
+
+    "for Either" >> {
+      "should put the Left value on the Fail" >> prop { n: Int =>
+        Left(n).toResult must_=== Fail(n)
+      }
+      "should put the Right value on the Ok" >> prop { n: Int =>
+        Right(n).toResult must_=== Ok(n)
+      }
+    }
+
+    "for Try" >> {
+      "should create a Fail if it's Failure" >> prop { e: Exception =>
+        Failure(e).toResult must_=== Fail(e)
+      }
+      "should create an Ok if it's Success" >> prop { n: Int =>
+        Success(n).toResult must_=== Ok(n)
+      }
+    }
+  }
+
   "sequence for options" >> {
     "should transform a Some(Fail) into a Fail" >> prop { x: Int =>
       Some(Fail(x)).sequence must_=== Fail(x)

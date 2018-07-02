@@ -107,6 +107,18 @@ object Result extends ResultFunctions with ResultBuildFromImplicits {
     override val isOk: Boolean = true
   }
 
+  implicit class OptionOps[E, A](opt: Option[A]) {
+    def toResult(ifEmpty: => E): Result[E, A] = Result.fromOption(opt, ifEmpty)
+  }
+
+  implicit class EitherOps[E, A](e: Either[E, A]) {
+    def toResult: Result[E, A] = Result.fromEither(e)
+  }
+
+  implicit class TryOps[A](t: Try[A]) {
+    def toResult: Result[Throwable, A] = Result.fromTry(t)
+  }
+
   implicit class OptionResult[E, A](opt: Option[Result[E, A]]) {
     def sequence: Result[E, Option[A]] = opt.fold(Result.ok[E, Option[A]](Option.empty[A]))(_.map(Option.apply))
   }
