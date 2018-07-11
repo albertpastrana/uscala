@@ -137,6 +137,78 @@ class AsyncResultSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     }
   }
 
+  "tap" >> {
+    "should not execute the given f if Fail and leave the left untouched" >> prop { n: Int =>
+      var executed = false
+      val fail: AsyncResult[Int, Int] = asyncFail(n)
+      fail.tap(_ => executed = true).underlying must beFail(n).await
+      executed must beFalse
+    }
+
+    "should execute the given f if Ok, passing the Ok value and leaving the result untouched" >> prop { n: Int =>
+      var received: Option[Int] = None
+      asyncOk(n).tap(x => received = Some(x)).underlying must beOk(n).await
+      received must beSome(n)
+    }
+  }
+
+  "tapOk" >> {
+    "should be an alias of tap" >> prop { n: Int =>
+      var tapExecuted = 0
+      def tap(x: Int): Unit = tapExecuted += x
+      var tapOkExecuted = 0
+      def tapOk(x: Int): Unit = tapOkExecuted += x
+      asyncOk(n).tapOk(tapOk).flatMap(x => asyncOk(n).tap(tap).map(_ == x)).underlying must beOk(beTrue).await
+      asyncFail(n).tapOk(tapOk).underlying must beFail.which { x: Int =>
+        asyncFail(n).tap(tap).underlying must beFail(be_===(x)).await
+      }.await
+      tapOkExecuted must_=== tapExecuted
+    }
+  }
+
+  "tapFail" >> {
+    "should not execute the given f if ok" >> prop { n: Int =>
+      var executed = false
+      val ok: AsyncResult[Int, Int] = asyncOk(n)
+      ok.tapFail(_ => executed = true).underlying must beOk(n).await
+      executed must beFalse
+    }
+
+    "should execute the given f if Fail, passing the Fail value and leaving the result untouched" >> prop { n: Int =>
+      var received: Option[Int] = None
+      asyncFail(n).tapFail(x => received = Some(x)).underlying must beFail(n).await
+      received must beSome(n)
+    }
+  }
+
+  "bitap" >> {
+    "should execute the given effect if Fail, leaving the result untouched" >> prop { n: Int =>
+      var executed = false
+      asyncFail(n).bitap { executed = true }.underlying must beFail(n).await
+      executed must beTrue
+    }
+
+    "should execute the given effect if Ok, leaving the result untouched" >> prop { n: Int =>
+      var executed = false
+      asyncOk(n).bitap { executed = true }.underlying must beOk(n).await
+      executed must beTrue
+    }
+  }
+
+  "flatten" >> {
+    "should transform a Ok(Ok(x)) into a Ok(x)" >> prop { n: Int =>
+      asyncOk(asyncOk(n)).flatten.underlying must beOk(n).await
+    }
+
+    "should transform a Ok(Fail(x)) into a Fail(x)" >> prop { n: Int =>
+      asyncOk(asyncFail(n)).flatten.underlying must beFail(n).await
+    }
+
+    "should transform a Fail(x) into a Fail(x)" >> prop { n: Int =>
+      asyncFail(n).flatten.underlying must beFail(n).await
+    }
+  }
+
   "swap" >> {
     "should move Fail value to Ok" >> prop { n: Int =>
       asyncFail(n).swap.underlying must beOk(n).await

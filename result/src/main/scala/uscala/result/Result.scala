@@ -12,19 +12,19 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     case Ok(b) => fb(b)
   }
 
-  def map[C](f: (B) => C): Result[A, C] = this match {
+  def map[C](f: B => C): Result[A, C] = this match {
     case Ok(b) => Ok(f(b))
     case e @ Fail(_) => e
   }
 
-  def leftMap[C](f: (A) => C): Result[C, B] = this match {
+  def leftMap[C](f: A => C): Result[C, B] = this match {
     case Fail(a) => Fail(f(a))
     case v @ Ok(_) => v
   }
 
-  def mapOk[C](f: (B) => C): Result[A, C] = map(f)
+  def mapOk[C](f: B => C): Result[A, C] = map(f)
 
-  def mapFail[C](f: (A) => C): Result[C, B] = leftMap(f)
+  def mapFail[C](f: A => C): Result[C, B] = leftMap(f)
 
   def flatMap[AA >: A, D](f: B => Result[AA, D]): Result[AA, D] = this match {
     case fail @ Result.Fail(_) => fail
@@ -36,13 +36,13 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     case Ok(b) => Ok(fb(b))
   }
 
-  def filter[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] = this match {
+  def filter[AA >: A](predicate: B => Boolean, orFailWith: => AA): Result[AA, B] = this match {
     case fail @ Result.Fail(_) => fail
     case ok @ Result.Ok(b) if predicate(b) => ok
     case _ => Fail(orFailWith)
   }
 
-  def filterNot[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] =
+  def filterNot[AA >: A](predicate: B => Boolean, orFailWith: => AA): Result[AA, B] =
     filter(!predicate(_), orFailWith)
 
   def tap(sideEffect: B => Unit): Result[A, B] = this.map { x =>

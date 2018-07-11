@@ -123,6 +123,18 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "tapOk" >> {
+    "should be an alias of tap" >> prop { n: Int =>
+      var tapExecuted = 0
+      def tap(x: Int): Unit = tapExecuted += x
+      var tapOkExecuted = 0
+      def tapOk(x: Int): Unit = tapOkExecuted += x
+      Ok(n).tapOk(tapOk) must_=== Ok(n).tap(tap)
+      Fail(n).tapOk(tapOk) must_=== Fail(n).tap(tap)
+      tapOkExecuted must_=== tapExecuted
+    }
+  }
+
   "tapFail" >> {
     "should not execute the given f if ok" >> prop { n: Int =>
       var executed = false

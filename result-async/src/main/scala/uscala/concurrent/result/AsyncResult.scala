@@ -40,6 +40,20 @@ final class AsyncResult[+A, +B](val underlying: Future[Result[A, B]]) extends Se
   def merge[AA >: A](implicit ec: ExecutionContext, ev: B <:< AA): Future[AA] =
     underlying.map(_.merge)
 
+  def tap(sideEffect: B => Unit)(implicit ec: ExecutionContext): AsyncResult[A, B] =
+    AsyncResult(underlying.map(_.tap(sideEffect)))
+
+  def tapOk(sideEffect: B => Unit)(implicit ec: ExecutionContext): AsyncResult[A, B] = tap(sideEffect)
+
+  def tapFail(sideEffect: A => Unit)(implicit ec: ExecutionContext): AsyncResult[A, B] =
+    AsyncResult(underlying.map(_.tapFail(sideEffect)))
+
+  def bitap[U](sideEffect: => U)(implicit ec: ExecutionContext): AsyncResult[A, B] =
+    AsyncResult(underlying.map(_.bitap(sideEffect)))
+
+  def flatten[AA >: A, BB](implicit ev: B <:< AsyncResult[AA, BB], ee: ExecutionContext): AsyncResult[AA, BB] =
+    flatMap(b => identity(ev(b)))
+
   def swap(implicit ec: ExecutionContext): AsyncResult[B, A] =
     AsyncResult(underlying.map(_.swap))
 
