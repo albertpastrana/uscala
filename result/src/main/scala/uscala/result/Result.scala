@@ -12,19 +12,19 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     case Ok(b) => fb(b)
   }
 
-  def map[C](f: (B) => C): Result[A, C] = this match {
+  def map[C](f: B => C): Result[A, C] = this match {
     case Ok(b) => Ok(f(b))
     case e @ Fail(_) => e
   }
 
-  def leftMap[C](f: (A) => C): Result[C, B] = this match {
+  def leftMap[C](f: A => C): Result[C, B] = this match {
     case Fail(a) => Fail(f(a))
     case v @ Ok(_) => v
   }
 
-  def mapOk[C](f: (B) => C): Result[A, C] = map(f)
+  def mapOk[C](f: B => C): Result[A, C] = map(f)
 
-  def mapFail[C](f: (A) => C): Result[C, B] = leftMap(f)
+  def mapFail[C](f: A => C): Result[C, B] = leftMap(f)
 
   def flatMap[AA >: A, D](f: B => Result[AA, D]): Result[AA, D] = this match {
     case fail @ Result.Fail(_) => fail
@@ -36,16 +36,23 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
     case Ok(b) => Ok(fb(b))
   }
 
-  def filter[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] = this match {
+  def filter[AA >: A](predicate: B => Boolean, orFailWith: => AA): Result[AA, B] = this match {
     case fail @ Result.Fail(_) => fail
     case ok @ Result.Ok(b) if predicate(b) => ok
     case _ => Fail(orFailWith)
   }
 
-  def filterNot[AA >: A](predicate: (B) => Boolean, orFailWith: => AA): Result[AA, B] =
+  def filterNot[AA >: A](predicate: B => Boolean, orFailWith: => AA): Result[AA, B] =
     filter(!predicate(_), orFailWith)
 
   def tap(sideEffect: B => Unit): Result[A, B] = this.map { x =>
+    sideEffect(x)
+    x
+  }
+
+  def tapOk(sideEffect: B => Unit): Result[A, B] = this.tap(sideEffect)
+
+  def tapFail(sideEffect: A => Unit): Result[A, B] = this.mapFail { x =>
     sideEffect(x)
     x
   }
@@ -84,7 +91,7 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
 
   def toTry(implicit ev: A <:< Throwable): Try[B] = fold(Failure(_), Success(_))
 
-  def isOk: Boolean
+  val isOk: Boolean
 
   def isFail: Boolean = !isOk
 
@@ -93,11 +100,23 @@ sealed abstract class Result[+A, +B] extends Product with Serializable {
 object Result extends ResultFunctions with ResultBuildFromImplicits {
 
   final case class Fail[+A](a: A) extends Result[A, Nothing] {
-    override def isOk: Boolean = false
+    override val isOk: Boolean = false
   }
 
   final case class Ok[+B](b: B) extends Result[Nothing, B] {
-    override def isOk: Boolean = true
+    override val isOk: Boolean = true
+  }
+
+  implicit class OptionOps[E, A](opt: Option[A]) {
+    def toResult(ifEmpty: => E): Result[E, A] = Result.fromOption(opt, ifEmpty)
+  }
+
+  implicit class EitherOps[E, A](e: Either[E, A]) {
+    def toResult: Result[E, A] = Result.fromEither(e)
+  }
+
+  implicit class TryOps[A](t: Try[A]) {
+    def toResult: Result[Throwable, A] = Result.fromTry(t)
   }
 
   implicit class OptionResult[E, A](opt: Option[Result[E, A]]) {

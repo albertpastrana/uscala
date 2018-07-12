@@ -123,6 +123,39 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
+  "tapOk" >> {
+    "should be an alias of tap" >> prop { n: Int =>
+      var tapExecuted = 0
+      def tap(x: Int): Unit = tapExecuted += x
+      var tapOkExecuted = 0
+      def tapOk(x: Int): Unit = tapOkExecuted += x
+      Ok(n).tapOk(tapOk) must_=== Ok(n).tap(tap)
+      Fail(n).tapOk(tapOk) must_=== Fail(n).tap(tap)
+      tapOkExecuted must_=== tapExecuted
+    }
+  }
+
+  "tapFail" >> {
+    "should not execute the given f if ok" >> prop { n: Int =>
+      var executed = false
+      val ok: Result[Int, Int] = Ok(n)
+      ok.tapFail(_ => executed = true)
+      executed must beFalse
+    }
+
+    "should execute the given f if Fail, passing the Fail value" >> prop { n: Int =>
+      var received: Option[Int] = None
+      Fail(n).tapFail(x => received = Some(x))
+      received must beSome(n)
+    }
+
+    "should execute the given f if Fail, leaving the result untouched" >> prop { n: Int =>
+      var executed = false
+      Fail(n).tapFail(_ => executed = true) must_=== Fail(n)
+      executed must beTrue
+    }
+  }
+
   "bitap" >> {
     "should execute the given effect if Fail, leaving the result untouched" >> prop { n: Int =>
       var executed = false
@@ -282,6 +315,35 @@ class ResultSpec extends Specification with ScalaCheck {
     }
     "should return truefor a Fail Result" >> {
       Fail(1).isFail must_=== true
+    }
+  }
+
+  "toResult" >> {
+    "for Option" >> {
+      "should create a Fail if it's None" >> prop { n: Int =>
+        Option.empty[Int].toResult(n) must_=== Fail(n)
+      }
+      "should create an Ok if it's Some" >> prop { n: Int =>
+        Option(n).toResult(1) must_=== Ok(n)
+      }
+    }
+
+    "for Either" >> {
+      "should put the Left value on the Fail" >> prop { n: Int =>
+        Left(n).toResult must_=== Fail(n)
+      }
+      "should put the Right value on the Ok" >> prop { n: Int =>
+        Right(n).toResult must_=== Ok(n)
+      }
+    }
+
+    "for Try" >> {
+      "should create a Fail if it's Failure" >> prop { e: Exception =>
+        Failure(e).toResult must_=== Fail(e)
+      }
+      "should create an Ok if it's Success" >> prop { n: Int =>
+        Success(n).toResult must_=== Ok(n)
+      }
     }
   }
 
