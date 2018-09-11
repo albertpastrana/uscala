@@ -1,5 +1,7 @@
 package uscala.result
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import uscala.result.Result._
@@ -104,69 +106,69 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "tap" >> {
     "should not execute the given f if Fail" >> prop { n: Int =>
-      var executed = false
+      val executed = new AtomicBoolean(false)
       val fail: Result[Int, Int] = Fail(n)
-      fail.tap(_ => executed = true)
-      executed must beFalse
+      fail.tap(_ => executed.set(true))
+      executed.get must beFalse
     }
 
     "should execute the given f if Ok, passing the Ok value" >> prop { n: Int =>
-      var received: Option[Int] = None
-      Ok(n).tap(x => received = Some(x))
-      received must beSome(n)
+      val received = new AtomicInteger(n)
+      Ok(n).tap(x => received.set(x+1))
+      received.get must_=== (n+1)
     }
 
     "should execute the given f if Ok, leaving the result untouched" >> prop { n: Int =>
-      var executed = false
-      Ok(n).tap(_ => executed = true) must_=== Ok(n)
-      executed must beTrue
+      val executed = new AtomicBoolean(false)
+      Ok(n).tap(_ => executed.set(true)) must_=== Ok(n)
+      executed.get must beTrue
     }
   }
 
   "tapOk" >> {
     "should be an alias of tap" >> prop { n: Int =>
-      var tapExecuted = 0
-      def tap(x: Int): Unit = tapExecuted += x
-      var tapOkExecuted = 0
-      def tapOk(x: Int): Unit = tapOkExecuted += x
+      val tapExecuted = new AtomicInteger(0)
+      def tap(x: Int): Unit = { tapExecuted.addAndGet(x); () }
+      val tapOkExecuted = new AtomicInteger(0)
+      def tapOk(x: Int): Unit = { tapOkExecuted.addAndGet(x); () }
       Ok(n).tapOk(tapOk) must_=== Ok(n).tap(tap)
       Fail(n).tapOk(tapOk) must_=== Fail(n).tap(tap)
-      tapOkExecuted must_=== tapExecuted
+      tapOkExecuted.get must_=== tapExecuted.get
     }
   }
 
   "tapFail" >> {
     "should not execute the given f if ok" >> prop { n: Int =>
-      var executed = false
+      val executed = new AtomicBoolean(false)
       val ok: Result[Int, Int] = Ok(n)
-      ok.tapFail(_ => executed = true)
-      executed must beFalse
+      ok.tapFail(_ => executed.set(true))
+      executed.get must beFalse
     }
 
     "should execute the given f if Fail, passing the Fail value" >> prop { n: Int =>
-      var received: Option[Int] = None
-      Fail(n).tapFail(x => received = Some(x))
-      received must beSome(n)
+      val received = new AtomicInteger(n)
+      Fail(n).tapFail(x => received.set(x+1))
+      received.get must_=== n+1
     }
 
     "should execute the given f if Fail, leaving the result untouched" >> prop { n: Int =>
-      var executed = false
-      Fail(n).tapFail(_ => executed = true) must_=== Fail(n)
-      executed must beTrue
+      val executed = new AtomicBoolean(false)
+      Fail(n).tapFail(_ => executed.set(true)) must_=== Fail(n)
+      executed.get must beTrue
     }
   }
 
   "bitap" >> {
     "should execute the given effect if Fail, leaving the result untouched" >> prop { n: Int =>
-      var executed = false
-      Fail(n).bitap { executed = true } must_=== Fail(n)
-      executed must beTrue
+      val executed = new AtomicBoolean(false)
+      Fail(n).bitap { executed.set(true) } must_=== Fail(n)
+      executed.get must beTrue
     }
 
     "should execute the given effect if Ok, leaving the result untouched" >> prop { n: Int =>
-      var executed = false
-      Ok(n).bitap { executed = true } must_=== Ok(n)
-      executed must beTrue
+      val executed = new AtomicBoolean(false)
+      Ok(n).bitap { executed.set(true) } must_=== Ok(n)
+      executed.get must beTrue
     }
   }
 
@@ -190,15 +192,15 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "foreach" >> {
     "should not apply f if it's a Fail" >> prop { n: Int =>
-      var executed = false
+      val executed = new AtomicBoolean(false)
       val fail: Result[Int, Int] = Fail(n)
-      fail.foreach(_ => executed = true)
-      executed must beFalse
+      fail.foreach(_ => executed.set(true))
+      executed.get must beFalse
     }
     "should apply f if it's an Ok" >> prop { n: Int =>
-      var executed = false
-      Ok(n).foreach(_ => executed = true)
-      executed must beTrue
+      val executed = new AtomicBoolean(false)
+      Ok(n).foreach(_ => executed.set(true))
+      executed.get must beTrue
     }
   }
 
