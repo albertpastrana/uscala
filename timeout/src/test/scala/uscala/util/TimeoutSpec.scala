@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 
 class TimeoutSpec extends Specification {
 
-  val timeoutLen = 100.seconds
+  private val timeoutLen = 100.seconds
 
   "when the timeout has not elapsed" >> {
     val ticker = new MutableTicker
@@ -50,8 +50,8 @@ class TimeoutSpec extends Specification {
   }
 
   class MutableTicker extends Ticker {
-    var time = 0.seconds
-    override def read = time
+    var time: FiniteDuration = 0.seconds
+    override def read: FiniteDuration = time
   }
 }
 

@@ -1,6 +1,7 @@
 package uscala.concurrent.result
 
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.specs2.ScalaCheck
@@ -139,59 +140,59 @@ class AsyncResultSpec(implicit ee: ExecutionEnv) extends Specification with Scal
 
   "tap" >> {
     "should not execute the given f if Fail and leave the left untouched" >> prop { n: Int =>
-      var executed = false
+      val executed = new AtomicBoolean(false)
       val fail: AsyncResult[Int, Int] = asyncFail(n)
-      fail.tap(_ => executed = true).underlying must beFail(n).await
-      executed must beFalse
+      fail.tap(_ => executed.set(true)).underlying must beFail(n).await
+      executed.get must beFalse
     }
 
     "should execute the given f if Ok, passing the Ok value and leaving the result untouched" >> prop { n: Int =>
-      var received: Option[Int] = None
-      asyncOk(n).tap(x => received = Some(x)).underlying must beOk(n).await
-      received must beSome(n)
+      val received = new AtomicInteger(n)
+      asyncOk(n).tap(x => received.set(x+1)).underlying must beOk(n).await
+      received.get must_=== n+1
     }
   }
 
   "tapOk" >> {
     "should be an alias of tap" >> prop { n: Int =>
-      var tapExecuted = 0
-      def tap(x: Int): Unit = tapExecuted += x
-      var tapOkExecuted = 0
-      def tapOk(x: Int): Unit = tapOkExecuted += x
+      val tapExecuted = new AtomicInteger(0)
+      def tap(x: Int): Unit = { tapExecuted.addAndGet(x); () }
+      val tapOkExecuted = new AtomicInteger(0)
+      def tapOk(x: Int): Unit = { tapOkExecuted.addAndGet(x); () }
       asyncOk(n).tapOk(tapOk).flatMap(x => asyncOk(n).tap(tap).map(_ == x)).underlying must beOk(beTrue).await
       asyncFail(n).tapOk(tapOk).underlying must beFail.which { x: Int =>
         asyncFail(n).tap(tap).underlying must beFail(be_===(x)).await
       }.await
-      tapOkExecuted must_=== tapExecuted
+      tapOkExecuted.get must_=== tapExecuted.get
     }
   }
 
   "tapFail" >> {
     "should not execute the given f if ok" >> prop { n: Int =>
-      var executed = false
+      val executed = new AtomicBoolean(false)
       val ok: AsyncResult[Int, Int] = asyncOk(n)
-      ok.tapFail(_ => executed = true).underlying must beOk(n).await
-      executed must beFalse
+      ok.tapFail(_ => executed.set(true)).underlying must beOk(n).await
+      executed.get must beFalse
     }
 
     "should execute the given f if Fail, passing the Fail value and leaving the result untouched" >> prop { n: Int =>
-      var received: Option[Int] = None
-      asyncFail(n).tapFail(x => received = Some(x)).underlying must beFail(n).await
-      received must beSome(n)
+      val received = new AtomicInteger(n)
+      asyncFail(n).tapFail(x => received.set(x + 1)).underlying must beFail(n).await
+      received.get must_=== n+1
     }
   }
 
   "bitap" >> {
     "should execute the given effect if Fail, leaving the result untouched" >> prop { n: Int =>
-      var executed = false
-      asyncFail(n).bitap { executed = true }.underlying must beFail(n).await
-      executed must beTrue
+      val executed = new AtomicBoolean(false)
+      asyncFail(n).bitap { executed.set(true) }.underlying must beFail(n).await
+      executed.get must beTrue
     }
 
     "should execute the given effect if Ok, leaving the result untouched" >> prop { n: Int =>
-      var executed = false
-      asyncOk(n).bitap { executed = true }.underlying must beOk(n).await
-      executed must beTrue
+      val executed = new AtomicBoolean(false)
+      asyncOk(n).bitap { executed.set(true) }.underlying must beOk(n).await
+      executed.get must beTrue
     }
   }
 
