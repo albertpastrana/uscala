@@ -347,7 +347,19 @@ class ResultSpec extends Specification with ScalaCheck {
     }
   }
 
-  "sequence for options" >> {
+  "sequence for results of options" >> {
+    "should transform a Fail into a Some(Fail)" >> prop { x: Int =>
+      Result.fail[Int, Option[Int]](x).sequence must beSome(Result.fail[Int, Int](x))
+    }
+    "should transform a Ok(None) into a None" >> {
+      Ok(None).sequence must beNone
+    }
+    "should transform Ok(Some) into an Some(Ok)" >> prop { x: Int =>
+      Result.ok[Int, Option[Int]](Some(x)).sequence must beSome(Result.ok[Int, Int](x))
+    }
+  }
+
+  "sequence for options of results" >> {
     "should transform a Some(Fail) into a Fail" >> prop { x: Int =>
       Some(Fail(x)).sequence must_=== Fail(x)
     }

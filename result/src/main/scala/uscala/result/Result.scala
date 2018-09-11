@@ -119,6 +119,14 @@ object Result extends ResultFunctions with ResultBuildFromImplicits {
     def toResult: Result[Throwable, A] = Result.fromTry(t)
   }
 
+  implicit class ResultOption[E, A](result: Result[E, Option[A]]) {
+    def sequence: Option[Result[E, A]] = result match {
+      case Ok(Some(value)) => Some(Ok(value))
+      case Ok(None) => None
+      case fail @ Fail(_) => Some(fail)
+    }
+  }
+
   implicit class OptionResult[E, A](opt: Option[Result[E, A]]) {
     def sequence: Result[E, Option[A]] = opt.fold(Result.ok[E, Option[A]](Option.empty[A]))(_.map(Option.apply))
   }
@@ -134,7 +142,6 @@ object Result extends ResultFunctions with ResultBuildFromImplicits {
     def orIfTrue[C >: A](failWith: => C): Result[C, Boolean] =
       result.filterNot(identity, failWith)
   }
-
 }
 
 trait ResultFunctions {
