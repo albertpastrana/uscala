@@ -5,7 +5,9 @@ import java.net.{URI, URL}
 import java.nio.file._
 import java.util
 
-import scala.collection.convert.Wrappers.JIteratorWrapper
+// Shim for Scala 2.12/2.13 compatibility.
+import uscala.resources.CollectionConvertersShim.implicits._
+
 import scala.util.Try
 
 object Resources {
@@ -59,7 +61,7 @@ object Resources {
       }
       .collect {
         case path if Files.isDirectory(path) =>
-          JIteratorWrapper(Files.list(path).iterator()).filter(Files.isRegularFile(_))
+          Files.list(path).iterator.asScala.filter(Files.isRegularFile(_))
       }
   }
 

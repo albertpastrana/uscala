@@ -238,7 +238,9 @@ class AsyncResultSpec(implicit ee: ExecutionEnv) extends Specification with Scal
 
     "Fails with an exception on the left of a result when execution times out" >> {
       fromFuture(longOp).attemptRunFor(1.millis) must beFail[Throwable].like {
-        case a => a.getMessage must_=== "Futures timed out after [1 millisecond]"
+        // Scala < 2.13 the message is "Futures timed out" (note plural)
+        // Scala >= 2.13 the message is "Future timed out"
+        case a => a.getMessage must endWith("timed out after [1 millisecond]")
       }
     }
   }
@@ -248,7 +250,11 @@ class AsyncResultSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       fromResult(r).attemptRunFor(_ => -1, 1.millis) must_=== r
     }
     "Returns a failed result of the underlying result type when execution times out" >> {
-      fromFuture(longOp).attemptRunFor(_.getMessage, 1.millis) must_=== Fail("Futures timed out after [1 millisecond]")
+      fromFuture(longOp).attemptRunFor(_.getMessage, 1.millis) must beFail[String].like {
+        // Scala < 2.13 the message is "Futures timed out" (note plural)
+        // Scala >= 2.13 the message is "Future timed out"
+        case a => a must endWith("timed out after [1 millisecond]")
+      }
     }
   }
 
