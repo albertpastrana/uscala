@@ -5,8 +5,6 @@ import uscala.result.Result.{Fail, Ok}
 import scala.collection.BuildFrom
 
 trait ResultBuildFromImplicits {
-  import scala.language.higherKinds
-  
   implicit class IterableResult[E, A, M[X] <: IterableOnce[X]](xs: M[Result[E, A]]) {
     def sequence(implicit cbf: BuildFrom[M[Result[E, A]], A, M[A]]): Result[E, M[A]] =
       xs.iterator.foldLeft(Result.ok[E, scala.collection.mutable.Builder[A, M[A]]](cbf.newBuilder(xs))) { (fr, fa) =>

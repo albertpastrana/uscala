@@ -8,6 +8,9 @@ import uscala.result.Result._
 
 import scala.util.{Failure, Success}
 
+// Shim for Scala 2.12/2.13 compatibility.
+import uscala.result.MapViewShim._
+
 class ResultSpec extends Specification with ScalaCheck {
 
   private def f(n: Int) = n + 1
@@ -286,7 +289,7 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "toList" >> {
     "should return Nil if it's a Fail" >> prop { n: Int =>
-      Fail(n).toList must_=== Nil
+      Fail(n).toList must beEmpty
     }
     "should return List(value) if it's an Ok" >> prop { n: Int =>
       Ok(n).toList must_=== List(n)
@@ -401,10 +404,10 @@ class ResultSpec extends Specification with ScalaCheck {
 
   "sequence for maps" >> {
     "should transform a Map(K -> Fail) into a Fail" >> prop { xs: Map[Int, Int] => xs.nonEmpty ==>
-      (xs.mapValues(Result.fail[Int, Int]).toMap.sequence must_=== Fail(xs.values.head))
+      (xs.mapValuesShim(Result.fail[Int, Int]).toMap.sequence must_=== Fail(xs.values.head))
     }
     "should transform a Map(K -> Ok(V) into an Ok(Map(K -> V))" >> prop { xs: Map[Int, Int] => xs.nonEmpty ==>
-      (xs.mapValues(Result.ok[Int, Int]).toMap.sequence must_=== Ok(xs))
+      (xs.mapValuesShim(Result.ok[Int, Int]).toMap.sequence must_=== Ok(xs))
     }
     "should transform an empty Map into an Ok(Map.empty)" >> {
       Map.empty[Int, Result[Int, Int]].sequence must_=== Ok(Map.empty[Int, Int])

@@ -5,6 +5,9 @@ import java.net.{URI, URLDecoder, URLEncoder}
 import scala.collection.immutable.{Map, List}
 import scala.util.{Failure, Success, Try}
 
+// Shim for Scala 2.12/2.13 compatibility.
+import uscala.net.MapViewShim._
+
 case class URL(scheme: String,
                userInfo: Option[String] = None,
                host: String,
@@ -129,7 +132,7 @@ object Query {
         case Array(key) => key -> ""
         case a @ Array(key, _*) => key -> a.tail.mkString("=")
       }.groupBy { case (key, _) => key }
-       .mapValues(_.toList.map{ case (_, v) => v }.filter(_.nonEmpty))
+       .mapValuesShim(_.toList.map{ case (_, v) => v }.filter(_.nonEmpty))
        .toMap
     }.fold[Query](Empty)(NonEmptyQuery)
   }

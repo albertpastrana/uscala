@@ -1,6 +1,8 @@
 package uscala.util
 
-import collection.JavaConverters._
+// Shim for Scala 2.12/2.13 compatibility.
+import uscala.util.CollectionConvertersShim.implicits._
+
 import scala.concurrent.duration.Duration
 import scala.util.{Success, Try}
 import uscala.util.TryOps._
