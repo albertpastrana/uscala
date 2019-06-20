@@ -1,16 +1,16 @@
 language: scala
 scala:
-   - 2.12.6
-   - 2.11.12
-   - 2.13.0-M4
+  - 2.13.0
+  - 2.12.8
+  - 2.11.12
 jdk: oraclejdk8
 script:
-  - sbt clean coverage "testOnly -- showtimes true timeFactor 5 exclude no-ci"
+  - sbt clean coverage 'testOnly -- showtimes true timeFactor 5 exclude no-ci'
   - if [[ -n "$CODACY_PROJECT_TOKEN" ]]; then sbt coverageReport coverageAggregate codacyCoverage; else echo "Skipped coverage reporting since no token was found"; fi
 after_success:
   - sbt coveralls
   - bash <(curl -s https://codecov.io/bash)
 cache:
   directories:
-   - ~/.ivy2
-   - ~/.sbt
+    - ~/.ivy2
+    - ~/.sbt
